@@ -1,0 +1,1 @@
+from slow import SpArray
