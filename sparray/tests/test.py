@@ -86,6 +86,22 @@ class TestOps(unittest.TestCase):
     assert_array_equal(self.a.toarray(), foo)
 
 
+class TestAttrs(unittest.TestCase):
+  def setUp(self):
+    self.a = SpArray(foo_indices, foo_data, shape=foo.shape)
+    self.bar = self.a.tocoo()
+
+  def test_prop_attrs(self):
+    for attr in ('dtype', 'size', 'shape', 'ndim'):
+      self.assertEqual(getattr(self.bar, attr), getattr(self.a, attr))
+
+  def test_transform_attrs(self):
+    assert_array_equal(self.bar.A, self.a.A)
+    for attr in ('T', 'real', 'imag'):
+      assert_array_equal(getattr(self.bar, attr).A,
+                         getattr(self.a, attr).toarray())
+
+
 class TestUfuncs(unittest.TestCase):
   def setUp(self):
     self.a = SpArray(foo_indices, foo_data, shape=foo.shape)
@@ -146,6 +162,15 @@ class TestUfuncs(unittest.TestCase):
     b = 3
     assert_array_equal(np.minimum(foo, b), np.minimum(self.a, b).toarray())
     assert_array_equal(np.maximum(foo, b), np.maximum(self.a, b))
+
+  def test_abs(self):
+    assert_array_equal(np.abs(foo), np.abs(self.a).toarray())
+    assert_array_equal(abs(foo), abs(self.a).toarray())
+
+  def test_fixed_point_at_zero_ufuncs(self):
+    with np.errstate(invalid='ignore', divide='ignore'):
+      for ufunc in ss.base._ufuncs_with_fixed_point_at_zero:
+        assert_array_equal(ufunc(foo), ufunc(self.a).toarray())
 
 
 if __name__ == '__main__':

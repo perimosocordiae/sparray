@@ -42,9 +42,27 @@ class SpArray(object):
     row,col = np.unravel_index(self.indices, self.shape)
     return ss.coo_matrix((self.data, (row, col)), shape=self.shape)
 
+  def getnnz(self):
+    return len(self.indices)
+
+  def transpose(self, *axes):
+    if self.ndim < 2:
+      return self
+    # axes control dimension order, defaults to reverse
+    if not axes:
+      axes = range(self.ndim-1, -1, -1)
+    elif len(axes) == 1 and self.ndim > 1:
+      axes = axes[0]
+    new_shape = tuple(self.shape[i] for i in axes)
+    # Hack: convert our flat indices into the new shape's flat indices.
+    old_multi_index = np.unravel_index(self.indices, self.shape)
+    new_multi_index = tuple(old_multi_index[i] for i in axes)
+    new_inds = np.ravel_multi_index(new_multi_index, new_shape)
+    return SpArray(new_inds, self.data, new_shape)
+
   def __repr__(self):
     return '<%s-SpArray of type %s\n\twith %d stored elements>' % (
-        self.shape, self.data.dtype, len(self.indices))
+        self.shape, self.data.dtype, self.getnnz())
 
   def __str__(self):
     lines = []
@@ -225,15 +243,25 @@ class SpArray(object):
 
     return result
 
+  def __getattr__(self, attr):
+    if attr == 'dtype':
+      return self.data.dtype
+    if attr == 'A':
+      return self.toarray()
+    if attr == 'T':
+      return self.transpose()
+    if attr == 'real':
+      return self._real()
+    if attr == 'imag':
+      return self._imag()
+    if attr == 'size':
+      return self.getnnz()
+    if attr == 'ndim':
+      return len(self.shape)
+    raise AttributeError(attr + " not found")
+
   # The following code is completely ripped from scipy.sparse.data._data_matrix.
   # I'm including it here because I don't want to inherit from spmatrix.
-
-  def _get_dtype(self):
-    return self.data.dtype
-
-  def _set_dtype(self,newtype):
-    self.data.dtype = newtype
-  dtype = property(fget=_get_dtype,fset=_set_dtype)
 
   def __abs__(self):
     return self._with_data(abs(self.data))
