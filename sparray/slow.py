@@ -135,10 +135,8 @@ class SpArray(object):
     # TODO: optimize
     return other.dot(self.toarray())
 
-  def _with_data(self, data, copy=True):
-    if copy:
-      return SpArray(self.indices.copy(), data, self.shape)
-    return SpArray(self.indices, data, self.shape)
+  def _with_data(self, data):
+    return SpArray(self.indices.copy(), data, self.shape)
 
   def __mul__(self, other):
     if isinstance(other, SpArray) or ss.issparse(other):
@@ -299,7 +297,7 @@ class SpArray(object):
     return self._with_data(self.data.conj())
 
   def copy(self):
-    return self._with_data(self.data.copy(), copy=True)
+    return self._with_data(self.data.copy())
 
   def min(self):
     # TODO: axis kwarg
@@ -316,7 +314,7 @@ for npfunc in ss.base._ufuncs_with_fixed_point_at_zero:
   def _create_method(op):
     def method(self):
       result = op(self.data)
-      x = self._with_data(result, copy=True)
+      x = self._with_data(result)
       return x
 
     method.__doc__ = ("Element-wise %s.\n\n"
