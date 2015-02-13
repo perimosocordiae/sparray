@@ -1,1 +1,1 @@
-from slow import SpArray
+from base import SpArray
