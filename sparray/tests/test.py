@@ -72,5 +72,25 @@ class TestOps(unittest.TestCase):
     assert_array_equal(self.a.toarray(), foo)
     assert_array_equal(b.toarray(), foo.ravel())
 
+
+class TestUfuncs(unittest.TestCase):
+  def setUp(self):
+    self.a = SpArray(foo_indices, foo_data, shape=foo.shape)
+
+  def test_add(self):
+    b = np.random.random(foo.shape)
+    assert_array_equal(foo + b, self.a + b)
+    assert_array_equal(b + foo, b + self.a)
+
+  def test_sub(self):
+    b = np.random.random(foo.shape)
+    assert_array_equal(foo - b, self.a - b)
+    assert_array_equal(b - foo, b - self.a)
+
+  def test_mul(self):
+    b = np.random.random(foo.shape)
+    assert_array_equal(foo * b, self.a * b)
+    assert_array_equal(b * foo, b * self.a)
+
 if __name__ == '__main__':
   unittest.main()
