@@ -89,8 +89,13 @@ class TestUfuncs(unittest.TestCase):
 
   def test_mul(self):
     b = np.random.random(foo.shape)
-    assert_array_equal(foo * b, self.a * b)
-    assert_array_equal(b * foo, b * self.a)
+    assert_array_equal(foo * b, (self.a * b).toarray())
+    assert_array_equal(b * foo, (b * self.a).toarray())
+
+  def test_dot(self):
+    b = np.random.random((foo.shape[1], foo.shape[0]))
+    assert_array_equal(foo.dot(b), self.a.dot(b))
+    assert_array_equal(b.dot(foo), b.dot(self.a))
 
 if __name__ == '__main__':
   unittest.main()

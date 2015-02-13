@@ -76,6 +76,7 @@ class SpArray(object):
       # TODO: sparse addition
       return NotImplemented
     # dense addition
+    # TODO: optimize
     return self.toarray() + other
 
   def __sub__(self, other):
@@ -83,6 +84,7 @@ class SpArray(object):
       # TODO: sparse version
       return NotImplemented
     # dense version
+    # TODO: optimize
     return self.toarray() - other
 
   def __rsub__(self, other):
@@ -90,7 +92,30 @@ class SpArray(object):
       # TODO: sparse version
       return NotImplemented
     # dense version
+    # TODO: optimize
     return other - self.toarray()
+
+  def dot(self, other):
+    if self.shape[-1] != other.shape[0]:
+      raise ValueError('Dimension mismatch: %s dot %s' % (
+          self.shape, other.shape))
+    if isinstance(other, SpArray) or ss.issparse(other):
+      # TODO: sparse version
+      return NotImplemented
+    # dense version
+    # TODO: optimize
+    return self.toarray().dot(other)
+
+  def _rdot(self, other):
+    if other.shape[-1] != self.shape[0]:
+      raise ValueError('Dimension mismatch: %s dot %s' % (
+          other.shape, self.shape))
+    if isinstance(other, SpArray) or ss.issparse(other):
+      # TODO: sparse version
+      return NotImplemented
+    # dense version
+    # TODO: optimize
+    return other.dot(self.toarray())
 
   def _with_data(self, data, copy=True):
     if copy:
@@ -99,7 +124,7 @@ class SpArray(object):
 
   def __mul__(self, other):
     if np.isscalar(other):
-      return self._mul_scalar(other)
+      return self._with_data(self.data * other)
     if isinstance(other, SpArray) or ss.issparse(other):
       # TODO: sparse version
       return NotImplemented
@@ -107,8 +132,8 @@ class SpArray(object):
     if other.ndim == 0 and other.dtype == np.object_:
       # Not interpretable as an array
       return NotImplemented
-    # TODO: dense version
-    return NotImplemented
+    # dense version
+    return self._with_data(self.data * other.flat[self.indices])
 
   def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
     '''ufunc dispatcher. Mostly copied from scipy.sparse.spmatrix'''
@@ -203,9 +228,6 @@ class SpArray(object):
 
   def copy(self):
       return self._with_data(self.data.copy(), copy=True)
-
-  def _mul_scalar(self, other):
-      return self._with_data(self.data * other)
 
 
 # Add the numpy unary ufuncs for which func(0) = 0
