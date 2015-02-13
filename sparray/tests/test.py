@@ -85,6 +85,11 @@ class TestOps(unittest.TestCase):
     b.data[2] *= 3  # modify b's members
     assert_array_equal(self.a.toarray(), foo)
 
+  def test_transpose(self):
+    assert_array_equal(foo.transpose(), self.a.transpose().toarray())
+    assert_array_equal(foo.transpose(0,1), self.a.transpose(0,1).toarray())
+    assert_array_equal(foo.transpose((0,1)), self.a.transpose((0,1)).toarray())
+
 
 class TestAttrs(unittest.TestCase):
   def setUp(self):
