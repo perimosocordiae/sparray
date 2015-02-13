@@ -89,6 +89,8 @@ class TestOps(unittest.TestCase):
     assert_array_equal(foo.transpose(), self.a.transpose().toarray())
     assert_array_equal(foo.transpose(0,1), self.a.transpose(0,1).toarray())
     assert_array_equal(foo.transpose((0,1)), self.a.transpose((0,1)).toarray())
+    b = SpArray.from_ndarray(bar)
+    assert_array_equal(bar.transpose(), b.transpose().toarray())
 
 
 class TestAttrs(unittest.TestCase):
@@ -135,6 +137,16 @@ class TestUfuncs(unittest.TestCase):
     assert_array_equal(foo * b, (self.a * b).toarray())
     assert_array_equal(b * foo, (b * self.a).toarray())
 
+  def test_imul(self):
+    b = np.random.random(foo.shape)
+    a = self.a.copy()
+    a *= b
+    assert_array_equal(foo * b, a.toarray())
+    b = 3
+    a = self.a.copy()
+    a *= b
+    assert_array_equal(foo * b, a.toarray())
+
   def test_div(self):
     b = np.random.random(foo.shape)
     c = 3  # scalar case
@@ -148,6 +160,13 @@ class TestUfuncs(unittest.TestCase):
       assert_array_equal(np.divide(b, foo), np.divide(b, self.a))
       assert_array_equal(np.true_divide(b, foo), np.true_divide(b, self.a))
       assert_array_equal(c / foo, c / self.a)
+
+  def test_neg(self):
+    assert_array_equal(-foo, (-self.a).toarray())
+
+  def test_conj(self):
+    assert_array_equal(foo.conj(), self.a.conj().toarray())
+    assert_array_equal(np.conjugate(foo), np.conjugate(self.a).toarray())
 
   def test_dot(self):
     b = np.random.random((foo.shape[1], foo.shape[0]))
@@ -167,6 +186,9 @@ class TestUfuncs(unittest.TestCase):
     b = 3
     assert_array_equal(np.minimum(foo, b), np.minimum(self.a, b).toarray())
     assert_array_equal(np.maximum(foo, b), np.maximum(self.a, b))
+    b = -3
+    assert_array_equal(np.minimum(foo, b), np.minimum(self.a, b))
+    assert_array_equal(np.maximum(foo, b), np.maximum(self.a, b).toarray())
 
   def test_abs(self):
     assert_array_equal(np.abs(foo), np.abs(self.a).toarray())

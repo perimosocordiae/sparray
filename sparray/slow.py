@@ -229,6 +229,8 @@ class SpArray(object):
       result = getattr(self, func.__name__)(*without_self)
     elif func is np.absolute:
       result = abs(self)
+    elif func in (np.conj, np.conjugate):
+      result = self.conj()
     elif func in ss.base._ufuncs_with_fixed_point_at_zero:
       result = getattr(self, func.__name__)()
     else:
