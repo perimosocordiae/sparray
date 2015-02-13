@@ -72,6 +72,19 @@ class TestOps(unittest.TestCase):
     assert_array_equal(self.a.toarray(), foo)
     assert_array_equal(b.toarray(), foo.ravel())
 
+  def test_astype(self):
+    self.assertIs(self.a.dtype, foo.dtype)
+    b = self.a.astype(np.float32)
+    self.assertIsNot(self.a, b)
+    assert_array_equal(b.toarray(), foo.astype(np.float32))
+
+  def test_copy(self):
+    b = self.a.copy()
+    self.assertIsNot(self.a, b)
+    assert_array_equal(self.a.toarray(), b.toarray())
+    b.data[2] *= 3  # modify b's members
+    assert_array_equal(self.a.toarray(), foo)
+
 
 class TestUfuncs(unittest.TestCase):
   def setUp(self):
@@ -81,24 +94,59 @@ class TestUfuncs(unittest.TestCase):
     b = np.random.random(foo.shape)
     assert_array_equal(foo + b, self.a + b)
     assert_array_equal(b + foo, b + self.a)
+    assert_array_equal(np.add(foo, b), np.add(self.a, b))
+    assert_array_equal(np.add(b, foo), np.add(b, self.a))
 
   def test_sub(self):
     b = np.random.random(foo.shape)
     assert_array_equal(foo - b, self.a - b)
     assert_array_equal(b - foo, b - self.a)
+    assert_array_equal(np.subtract(foo, b), np.subtract(self.a, b))
+    assert_array_equal(np.subtract(b, foo), np.subtract(b, self.a))
 
   def test_mul(self):
     b = np.random.random(foo.shape)
     assert_array_equal(foo * b, (self.a * b).toarray())
     assert_array_equal(b * foo, (b * self.a).toarray())
+    assert_array_equal(np.multiply(foo, b), np.multiply(self.a, b).toarray())
+    assert_array_equal(np.multiply(b, foo), np.multiply(b, self.a).toarray())
     b = 3  # scalar case
     assert_array_equal(foo * b, (self.a * b).toarray())
     assert_array_equal(b * foo, (b * self.a).toarray())
+
+  def test_div(self):
+    b = np.random.random(foo.shape)
+    c = 3  # scalar case
+    assert_array_equal(foo / b, (self.a / b).toarray())
+    assert_array_equal(np.divide(foo, b), np.divide(self.a, b).toarray())
+    assert_array_equal(np.true_divide(foo, b),
+                       np.true_divide(self.a, b).toarray())
+    assert_array_equal(foo / c, (self.a / c).toarray())
+    with np.errstate(divide='ignore'):
+      assert_array_equal(b / foo, b / self.a)
+      assert_array_equal(np.divide(b, foo), np.divide(b, self.a))
+      assert_array_equal(np.true_divide(b, foo), np.true_divide(b, self.a))
+      assert_array_equal(c / foo, c / self.a)
 
   def test_dot(self):
     b = np.random.random((foo.shape[1], foo.shape[0]))
     assert_array_equal(foo.dot(b), self.a.dot(b))
     assert_array_equal(b.dot(foo), b.dot(self.a))
+    assert_array_equal(np.dot(foo, b), np.dot(self.a, b))
+    assert_array_equal(np.dot(b, foo), np.dot(b, self.a))
+
+  def test_minmax(self):
+    self.assertEqual(foo.min(), self.a.min())
+    self.assertEqual(foo.max(), self.a.max())
+
+  def test_minmax_imum(self):
+    b = np.random.random(foo.shape)
+    assert_array_equal(np.minimum(foo, b), np.minimum(self.a, b))
+    assert_array_equal(np.maximum(foo, b), np.maximum(self.a, b))
+    b = 3
+    assert_array_equal(np.minimum(foo, b), np.minimum(self.a, b).toarray())
+    assert_array_equal(np.maximum(foo, b), np.maximum(self.a, b))
+
 
 if __name__ == '__main__':
   unittest.main()

@@ -123,20 +123,59 @@ class SpArray(object):
     return SpArray(self.indices, data, self.shape)
 
   def __mul__(self, other):
-    if np.isscalar(other):
-      return self._with_data(self.data * other)
     if isinstance(other, SpArray) or ss.issparse(other):
       # TODO: sparse version
       return NotImplemented
-    other = np.asanyarray(other)
-    if other.ndim == 0 and other.dtype == np.object_:
-      # Not interpretable as an array
-      return NotImplemented
-    # dense version
-    return self._with_data(self.data * other.flat[self.indices])
+    if not np.isscalar(other):
+      other = np.asanyarray(other)
+      if other.ndim == 0 and other.dtype == np.object_:
+        return NotImplemented  # Not interpretable as an array
+      other = other.flat[self.indices]
+    return self._with_data(self.data * other)
 
   def __rmul__(self, other):
     return self.__mul__(other)
+
+  def _divide(self, other, true_divide=False, rdivide=False):
+    if isinstance(other, SpArray) or ss.issparse(other):
+      # TODO: sparse version
+      return NotImplemented
+    if rdivide:
+      # Div by zero means we won't get a sparse result, so punt.
+      # TODO: true_divide
+      return other / self.toarray()
+    if not np.isscalar(other):
+      other = np.asanyarray(other)
+      if other.ndim == 0 and other.dtype == np.object_:
+        # Not interpretable as an array
+        return NotImplemented
+      other = other.flat[self.indices]
+    # TODO: true_divide
+    return self._with_data(self.data / other)
+
+  def __div__(self, other):
+    return self._divide(other)
+
+  def __rdiv__(self, other):
+    return self._divide(other, rdivide=True)
+
+  def minimum(self, other):
+    if np.isscalar(other) and other >= 0:
+      return self._with_data(np.minimum(self.data, other))
+    if isinstance(other, SpArray) or ss.issparse(other):
+      # TODO: sparse version
+      return NotImplemented
+    # Probably won't get a sparse result
+    return np.minimum(self.toarray(), other)
+
+  def maximum(self, other):
+    if np.isscalar(other) and other <= 0:
+      return self._with_data(np.maximum(self.data, other))
+    if isinstance(other, SpArray) or ss.issparse(other):
+      # TODO: sparse version
+      return NotImplemented
+    # Probably won't get a sparse result
+    return np.maximum(self.toarray(), other)
 
   def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
     '''ufunc dispatcher. Mostly copied from scipy.sparse.spmatrix'''
@@ -190,48 +229,55 @@ class SpArray(object):
   # I'm including it here because I don't want to inherit from spmatrix.
 
   def _get_dtype(self):
-      return self.data.dtype
+    return self.data.dtype
 
   def _set_dtype(self,newtype):
-      self.data.dtype = newtype
+    self.data.dtype = newtype
   dtype = property(fget=_get_dtype,fset=_set_dtype)
 
   def __abs__(self):
-      return self._with_data(abs(self.data))
+    return self._with_data(abs(self.data))
 
   def _real(self):
-      return self._with_data(self.data.real)
+    return self._with_data(self.data.real)
 
   def _imag(self):
-      return self._with_data(self.data.imag)
+    return self._with_data(self.data.imag)
 
   def __neg__(self):
-      return self._with_data(-self.data)
+    return self._with_data(-self.data)
 
   def __imul__(self, other):  # self *= other
-      if np.isscalar(other):
-          self.data *= other
-          return self
-      else:
-          return NotImplemented
+    if np.isscalar(other):
+      self.data *= other
+      return self
+    else:
+      return NotImplemented
 
   def __itruediv__(self, other):  # self /= other
-      if np.isscalar(other):
-          recip = 1.0 / other
-          self.data *= recip
-          return self
-      else:
-          return NotImplemented
+    if np.isscalar(other):
+      recip = 1.0 / other
+      self.data *= recip
+      return self
+    else:
+      return NotImplemented
 
   def astype(self, t):
-      return self._with_data(self.data.astype(t))
+    return self._with_data(self.data.astype(t))
 
   def conj(self):
-      return self._with_data(self.data.conj())
+    return self._with_data(self.data.conj())
 
   def copy(self):
-      return self._with_data(self.data.copy(), copy=True)
+    return self._with_data(self.data.copy(), copy=True)
 
+  def min(self):
+    # TODO: axis kwarg
+    return self.data.min()
+
+  def max(self):
+    # TODO: axis kwarg
+    return self.data.max()
 
 # Add the numpy unary ufuncs for which func(0) = 0
 for npfunc in ss.base._ufuncs_with_fixed_point_at_zero:
