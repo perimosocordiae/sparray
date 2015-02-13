@@ -135,6 +135,9 @@ class SpArray(object):
     # dense version
     return self._with_data(self.data * other.flat[self.indices])
 
+  def __rmul__(self, other):
+    return self.__mul__(other)
+
   def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
     '''ufunc dispatcher. Mostly copied from scipy.sparse.spmatrix'''
     out = kwargs.pop('out', None)

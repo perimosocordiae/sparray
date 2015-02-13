@@ -91,6 +91,9 @@ class TestUfuncs(unittest.TestCase):
     b = np.random.random(foo.shape)
     assert_array_equal(foo * b, (self.a * b).toarray())
     assert_array_equal(b * foo, (b * self.a).toarray())
+    b = 3  # scalar case
+    assert_array_equal(foo * b, (self.a * b).toarray())
+    assert_array_equal(b * foo, (b * self.a).toarray())
 
   def test_dot(self):
     b = np.random.random((foo.shape[1], foo.shape[0]))
