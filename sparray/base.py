@@ -10,12 +10,12 @@ class SpArray(object):
     self.shape : tuple of integers, ala ndarray shape
   '''
   def __init__(self, indices, data, shape=None):
-    indices = np.array(indices).ravel()
+    indices = np.array(indices, dtype=int).ravel()
     data = np.array(data).ravel()
     assert len(indices) == len(data), '# inds (%d) != # data (%d)' % (
         len(indices), len(data))
     if shape is None:
-      self.shape = data.shape
+      self.shape = (indices.max()+1,)
     else:
       self.shape = shape
       assert np.prod(shape) >= len(data)
