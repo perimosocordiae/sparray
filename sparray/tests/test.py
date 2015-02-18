@@ -7,6 +7,8 @@ from sparray import SpArray
 dense2d = np.array([[0,0,0],[4,5,7],[6,2,0],[1,3,8]], dtype=float) / 2.
 dense2d_indices = [1,3,4,5,6,7,9,10,11]
 dense2d_data = [0,2,2.5,3.5,3,1,0.5,1.5,4]
+sparse2d = ss.csr_matrix(dense2d)
+sparse2d[0,1] = 0  # Add the explicit zero to match indices,data
 
 dense1d = np.arange(5) - 2
 dense1d_indices = [0,1,3,4]
@@ -28,10 +30,10 @@ class TestCreation(unittest.TestCase):
       assert_array_equal(a.toarray(), arr)
 
   def test_from_sparse(self):
-    for cls in (ss.csr_matrix, ss.coo_matrix):
-      a = SpArray.from_sparse(cls(dense2d))
+    for fmt in ('csr', 'csc', 'coo', 'dok', 'lil', 'dia'):
+      a = SpArray.from_sparse(sparse2d.asformat(fmt))
       assert_array_equal(a.toarray(), dense2d,
-                         'Failed to convert from %s' % cls)
+                         'Failed to convert from %s' % fmt.upper())
 
 
 class TestConversion(unittest.TestCase):
@@ -102,16 +104,18 @@ class TestOps(unittest.TestCase):
 class TestAttrs(unittest.TestCase):
   def setUp(self):
     self.a = SpArray(dense2d_indices, dense2d_data, shape=dense2d.shape)
-    self.a_coo = self.a.tocoo()
 
   def test_prop_attrs(self):
     for attr in ('dtype', 'size', 'shape', 'ndim'):
-      self.assertEqual(getattr(self.a_coo, attr), getattr(self.a, attr))
+      exp = getattr(sparse2d, attr)
+      act = getattr(self.a, attr)
+      self.assertEqual(getattr(sparse2d, attr), getattr(self.a, attr),
+                       'attr "%s" mismatch: %s != %s' % (attr, exp, act))
 
   def test_transform_attrs(self):
-    assert_array_equal(self.a_coo.A, self.a.A)
+    assert_array_equal(sparse2d.A, self.a.A)
     for attr in ('T', 'real', 'imag'):
-      assert_array_equal(getattr(self.a_coo, attr).A,
+      assert_array_equal(getattr(sparse2d, attr).A,
                          getattr(self.a, attr).toarray())
 
 

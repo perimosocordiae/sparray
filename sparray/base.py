@@ -29,7 +29,8 @@ class SpArray(object):
 
   @staticmethod
   def from_sparse(mat):
-    inds = np.ravel_multi_index(mat.nonzero(), mat.shape)
+    mat = mat.tocoo()
+    inds = np.ravel_multi_index((mat.row, mat.col), mat.shape)
     return SpArray(inds, mat.data, shape=mat.shape)
 
   def toarray(self):
