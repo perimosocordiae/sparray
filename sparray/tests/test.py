@@ -29,9 +29,9 @@ class TestCreation(unittest.TestCase):
       a = SpArray.from_ndarray(arr)
       assert_array_equal(a.toarray(), arr)
 
-  def test_from_sparse(self):
+  def test_from_spmatrix(self):
     for fmt in ('csr', 'csc', 'coo', 'dok', 'lil', 'dia'):
-      a = SpArray.from_sparse(sparse2d.asformat(fmt))
+      a = SpArray.from_spmatrix(sparse2d.asformat(fmt))
       assert_array_equal(a.toarray(), dense2d,
                          'Failed to convert from %s' % fmt.upper())
 

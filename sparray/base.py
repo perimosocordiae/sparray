@@ -28,7 +28,7 @@ class SpArray(object):
     return SpArray(np.nonzero(mask)[0], arr.flat[mask], shape=arr.shape)
 
   @staticmethod
-  def from_sparse(mat):
+  def from_spmatrix(mat):
     mat = mat.tocoo()
     inds = np.ravel_multi_index((mat.row, mat.col), mat.shape)
     return SpArray(inds, mat.data, shape=mat.shape)
