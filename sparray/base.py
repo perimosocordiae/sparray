@@ -91,12 +91,35 @@ class SpArray(object):
     return self.reshape((np.prod(self.shape),))
 
   def __add__(self, other):
-    if isinstance(other, SpArray) or ss.issparse(other):
-      # TODO: sparse addition
+    if np.isscalar(other):
+      if other == 0:
+        return self.copy()
+      raise NotImplementedError('adding a nonzero scalar to a sparse array '
+                                'is not supported')
+    # TODO: broadcasting
+    if other.shape != self.shape:
+      raise ValueError('inconsistent shapes')
+    if ss.issparse(other):
+      # XXX: what type should spmatrix + sparray result in?
+      # np.matrix + np.array always returns np.matrix
       return NotImplemented
+    if isinstance(other, SpArray):
+      # TODO: generalize sparray pairwise operations
+      idx = np.union1d(self.indices, other.indices)
+      dtype = np.promote_types(self.dtype, other.dtype)
+      data = np.zeros(len(idx), dtype=dtype)
+      # TODO: keep indices sorted to make this much faster
+      for i,ix in enumerate(idx):
+        lhs = self.data[self.indices==ix].sum()
+        rhs = other.data[other.indices==ix].sum()
+        data[i] = lhs + rhs
+      return SpArray(idx, data, self.shape)
     # dense addition
     # TODO: optimize
     return self.toarray() + other
+
+  def __radd__(self, other):
+    return self.__add__(other)
 
   def __sub__(self, other):
     if isinstance(other, SpArray) or ss.issparse(other):

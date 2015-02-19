@@ -97,7 +97,8 @@ class TestOps(unittest.TestCase):
   def test_transpose(self):
     assert_array_equal(dense2d.transpose(), self.a.transpose().toarray())
     assert_array_equal(dense2d.transpose(0,1), self.a.transpose(0,1).toarray())
-    assert_array_equal(dense2d.transpose((0,1)), self.a.transpose((0,1)).toarray())
+    assert_array_equal(dense2d.transpose((0,1)),
+                       self.a.transpose((0,1)).toarray())
     assert_array_equal(dense1d.transpose(), self.b.transpose().toarray())
 
 
@@ -123,12 +124,33 @@ class TestUfuncs(unittest.TestCase):
   def setUp(self):
     self.a = SpArray(dense2d_indices, dense2d_data, shape=dense2d.shape)
 
-  def test_add(self):
+  def test_add_dense(self):
     b = np.random.random(dense2d.shape)
     assert_array_equal(dense2d + b, self.a + b)
     assert_array_equal(b + dense2d, b + self.a)
     assert_array_equal(np.add(dense2d, b), np.add(self.a, b))
     assert_array_equal(np.add(b, dense2d), np.add(b, self.a))
+
+  @unittest.skip('NYI')
+  def test_add_spmatrix(self):
+    for fmt in ('coo', 'csr', 'csc'):
+      b = ss.rand(*sparse2d.shape, density=0.5, format=fmt)
+      assert_array_equal(sparse2d + b, self.a + b)
+      assert_array_equal(b + sparse2d, b + self.a)
+
+  def test_add_sparray(self):
+    s = ss.rand(*sparse2d.shape, density=0.5)
+    b = SpArray.from_spmatrix(s)
+    assert_array_equal(dense2d + s, (self.a + b).toarray())
+    assert_array_equal(s + dense2d, (b + self.a).toarray())
+
+  def test_add_scalar(self):
+    b = 0
+    assert_array_equal(dense2d + b, (self.a + b).toarray())
+    assert_array_equal(b + dense2d, (b + self.a).toarray())
+    b = 1
+    self.assertRaises(NotImplementedError, lambda: self.a + b)
+    self.assertRaises(NotImplementedError, lambda: b + self.a)
 
   def test_sub(self):
     b = np.random.random(dense2d.shape)
@@ -141,8 +163,10 @@ class TestUfuncs(unittest.TestCase):
     b = np.random.random(dense2d.shape)
     assert_array_equal(dense2d * b, (self.a * b).toarray())
     assert_array_equal(b * dense2d, (b * self.a).toarray())
-    assert_array_equal(np.multiply(dense2d, b), np.multiply(self.a, b).toarray())
-    assert_array_equal(np.multiply(b, dense2d), np.multiply(b, self.a).toarray())
+    assert_array_equal(np.multiply(dense2d, b),
+                       np.multiply(self.a, b).toarray())
+    assert_array_equal(np.multiply(b, dense2d),
+                       np.multiply(b, self.a).toarray())
     b = 3  # scalar case
     assert_array_equal(dense2d * b, (self.a * b).toarray())
     assert_array_equal(b * dense2d, (b * self.a).toarray())
