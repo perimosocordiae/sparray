@@ -115,8 +115,10 @@ class SpArray(object):
         data[i] = lhs + rhs
       return SpArray(idx, data, self.shape)
     # dense addition
-    # TODO: optimize
-    return self.toarray() + other
+    # TODO: generalize dense pairwise operations
+    result = other.copy(order='C')
+    result.flat[self.indices] += self.data
+    return result
 
   def __radd__(self, other):
     return self.__add__(other)
