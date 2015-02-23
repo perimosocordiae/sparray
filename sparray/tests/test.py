@@ -1,8 +1,9 @@
+from __future__ import division
 import unittest
 import numpy as np
 import scipy.sparse as ss
 import warnings
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_array_almost_equal
 from sparray import SpArray
 
 dense2d = np.array([[0,0,0],[4,5,7],[6,2,0],[1,3,8]], dtype=float) / 2.
@@ -156,6 +157,19 @@ class TestUfuncs(unittest.TestCase):
     self.assertRaises(NotImplementedError, lambda: self.a + b)
     self.assertRaises(NotImplementedError, lambda: b + self.a)
 
+  def test_add_inplace(self):
+    self.a += 0
+    assert_array_equal(dense2d, self.a.toarray())
+    # np.add with out kwarg
+    res = np.add(self.a, 0, out=self.a)
+    self.assertIs(res, self.a)
+    assert_array_equal(dense2d, self.a.toarray())
+    # sparray += sparray
+    s = ss.rand(*sparse2d.shape, density=0.5)
+    b = SpArray.from_spmatrix(s)
+    self.a += b
+    assert_array_equal(dense2d + s, self.a.toarray())
+
   def test_sub(self):
     b = np.random.random(dense2d.shape)
     assert_array_equal(dense2d - b, self.a - b)
@@ -188,16 +202,25 @@ class TestUfuncs(unittest.TestCase):
   def test_div(self):
     b = np.random.random(dense2d.shape)
     c = 3  # scalar case
-    assert_array_equal(dense2d / b, (self.a / b).toarray())
-    assert_array_equal(np.divide(dense2d, b), np.divide(self.a, b).toarray())
-    assert_array_equal(np.true_divide(dense2d, b),
-                       np.true_divide(self.a, b).toarray())
-    assert_array_equal(dense2d / c, (self.a / c).toarray())
+    assert_array_almost_equal(dense2d / b, (self.a / b).toarray())
+    assert_array_almost_equal(np.divide(dense2d, b),
+                              np.divide(self.a, b).toarray())
+    assert_array_almost_equal(np.true_divide(dense2d, b),
+                              np.true_divide(self.a, b).toarray())
+    assert_array_almost_equal(dense2d / c, (self.a / c).toarray())
     with np.errstate(divide='ignore'):
-      assert_array_equal(b / dense2d, b / self.a)
-      assert_array_equal(np.divide(b, dense2d), np.divide(b, self.a))
-      assert_array_equal(np.true_divide(b, dense2d), np.true_divide(b, self.a))
-      assert_array_equal(c / dense2d, c / self.a)
+      assert_array_almost_equal(b / dense2d, b / self.a)
+      assert_array_almost_equal(np.divide(b, dense2d), np.divide(b, self.a))
+      assert_array_almost_equal(np.true_divide(b, dense2d),
+                                np.true_divide(b, self.a))
+      assert_array_almost_equal(c / dense2d, c / self.a)
+
+  def test_div_inplace(self):
+    self.a /= 1
+    assert_array_almost_equal(dense2d, self.a.toarray())
+    b = np.random.random(dense2d.shape)
+    self.a /= b
+    assert_array_almost_equal(dense2d / b, self.a.toarray())
 
   def test_neg(self):
     assert_array_equal(-dense2d, (-self.a).toarray())

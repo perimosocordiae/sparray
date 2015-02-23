@@ -90,6 +90,31 @@ class SpArray(object):
   def ravel(self):
     return self.reshape((np.prod(self.shape),))
 
+  def _pairwise_sparray(self, other, ufunc):
+    '''ufunc(sparse, sparse) -> sparse'''
+    idx = np.union1d(self.indices, other.indices)
+    dtype = np.promote_types(self.dtype, other.dtype)
+    data = np.zeros(len(idx), dtype=dtype)
+    # TODO: keep indices sorted to make this much faster
+    for i,ix in enumerate(idx):
+      lhs = self.data[self.indices==ix].sum()
+      rhs = other.data[other.indices==ix].sum()
+      data[i] = ufunc(lhs, rhs)
+    return SpArray(idx, data, self.shape)
+
+  def _pairwise_dense2dense(self, other, ufunc):
+    '''ufunc(dense, sparse) -> dense'''
+    result = other.copy(order='C')
+    result.flat[self.indices] = ufunc(result.flat[self.indices], self.data)
+    return result
+
+  def _pairwise_dense2sparse(self, other, ufunc):
+    '''ufunc(dense, sparse) -> sparse'''
+    other = np.asanyarray(other)
+    if other.ndim == 0 and other.dtype == np.object_:
+      return NotImplemented  # Not interpretable as an array
+    return self._with_data(ufunc(self.data, other.flat[self.indices]))
+
   def __add__(self, other):
     if np.isscalar(other):
       if other == 0:
@@ -104,40 +129,68 @@ class SpArray(object):
       # np.matrix + np.array always returns np.matrix
       return NotImplemented
     if isinstance(other, SpArray):
-      # TODO: generalize sparray pairwise operations
-      idx = np.union1d(self.indices, other.indices)
-      dtype = np.promote_types(self.dtype, other.dtype)
-      data = np.zeros(len(idx), dtype=dtype)
-      # TODO: keep indices sorted to make this much faster
-      for i,ix in enumerate(idx):
-        lhs = self.data[self.indices==ix].sum()
-        rhs = other.data[other.indices==ix].sum()
-        data[i] = lhs + rhs
-      return SpArray(idx, data, self.shape)
+      return self._pairwise_sparray(other, np.add)
     # dense addition
-    # TODO: generalize dense pairwise operations
-    result = other.copy(order='C')
-    result.flat[self.indices] += self.data
-    return result
+    return self._pairwise_dense2dense(other, np.add)
 
   def __radd__(self, other):
     return self.__add__(other)
 
   def __sub__(self, other):
-    if isinstance(other, SpArray) or ss.issparse(other):
-      # TODO: sparse version
-      return NotImplemented
-    # dense version
-    # TODO: optimize
-    return self.toarray() - other
+    return self.__add__(-other)
 
   def __rsub__(self, other):
-    if isinstance(other, SpArray) or ss.issparse(other):
-      # TODO: sparse version
+    return (-self).__add__(other)
+
+  def __mul__(self, other):
+    if np.isscalar(other):
+      return self._with_data(self.data * other)
+    # TODO: broadcasting
+    if other.shape != self.shape:
+      raise ValueError('inconsistent shapes')
+    if ss.issparse(other):
+      # XXX: what type should spmatrix * sparray result in?
       return NotImplemented
-    # dense version
-    # TODO: optimize
-    return other - self.toarray()
+    if isinstance(other, SpArray):
+      return self._pairwise_sparray(other, np.multiply)
+    # dense * sparse -> sparse
+    return self._pairwise_dense2sparse(other, np.multiply)
+
+  def __rmul__(self, other):
+    return self.__mul__(other)
+
+  def __div__(self, other):
+    return self._divide(other)  # pragma: no cover
+
+  def __truediv__(self, other):
+    return self._divide(other, true_divide=True)
+
+  def __rtruediv__(self, other):
+    return self._divide(other, true_divide=True, rdivide=True)
+
+  def __rdiv__(self, other):
+    return self._divide(other, rdivide=True)  # pragma: no cover
+
+  def _divide(self, other, true_divide=False, rdivide=False):
+    if rdivide:
+      # div by 0 means we must always densify
+      return other / self.toarray()
+    # Punt truediv to __mul__
+    if true_divide:
+      return self.__mul__(1./other)
+    # Non-truediv cases
+    if np.isscalar(other):
+      return self._with_data(self.data / other)
+    # TODO: broadcasting
+    if other.shape != self.shape:
+      raise ValueError('inconsistent shapes')
+    if ss.issparse(other):
+      # XXX: what type should spmatrix / sparray result in?
+      return NotImplemented
+    if isinstance(other, SpArray):
+      return self._pairwise_sparray(other, np.multiply)
+    # dense / sparse -> sparse
+    return self._pairwise_dense2sparse(other, np.divide)
 
   def dot(self, other):
     if self.shape[-1] != other.shape[0]:
@@ -163,43 +216,6 @@ class SpArray(object):
 
   def _with_data(self, data):
     return SpArray(self.indices.copy(), data, self.shape)
-
-  def __mul__(self, other):
-    if isinstance(other, SpArray) or ss.issparse(other):
-      # TODO: sparse version
-      return NotImplemented
-    if not np.isscalar(other):
-      other = np.asanyarray(other)
-      if other.ndim == 0 and other.dtype == np.object_:
-        return NotImplemented  # Not interpretable as an array
-      other = other.flat[self.indices]
-    return self._with_data(self.data * other)
-
-  def __rmul__(self, other):
-    return self.__mul__(other)
-
-  def _divide(self, other, true_divide=False, rdivide=False):
-    if isinstance(other, SpArray) or ss.issparse(other):
-      # TODO: sparse version
-      return NotImplemented
-    if rdivide:
-      # Div by zero means we won't get a sparse result, so punt.
-      # TODO: true_divide
-      return other / self.toarray()
-    if not np.isscalar(other):
-      other = np.asanyarray(other)
-      if other.ndim == 0 and other.dtype == np.object_:
-        # Not interpretable as an array
-        return NotImplemented
-      other = other.flat[self.indices]
-    # TODO: true_divide
-    return self._with_data(self.data / other)
-
-  def __div__(self, other):
-    return self._divide(other)
-
-  def __rdiv__(self, other):
-    return self._divide(other, rdivide=True)
 
   def minimum(self, other):
     if np.isscalar(other) and other >= 0:
@@ -264,7 +280,9 @@ class SpArray(object):
       if not isinstance(out, SpArray) and isinstance(result, SpArray):
         out[...] = result.toarray()
       else:
-        out[...] = result
+        out.data = result.data
+        out.indices = result.indices
+        out.shape = result.shape
       result = out
 
     return result
