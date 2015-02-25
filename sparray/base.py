@@ -126,8 +126,8 @@ class SpArray(object):
       raise ValueError('inconsistent shapes')
     if ss.issparse(other):
       # XXX: what type should spmatrix + sparray result in?
-      # np.matrix + np.array always returns np.matrix
-      return NotImplemented
+      # np.matrix + np.array always returns np.matrix, so for now we punt
+      return self.tocoo() + other
     if isinstance(other, SpArray):
       return self._pairwise_sparray(other, np.add)
     # dense addition
