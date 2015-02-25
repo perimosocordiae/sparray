@@ -125,7 +125,6 @@ class SpArray(object):
     if other.shape != self.shape:
       raise ValueError('inconsistent shapes')
     if ss.issparse(other):
-      # XXX: what type should spmatrix + sparray result in?
       # np.matrix + np.array always returns np.matrix, so for now we punt
       return self.tocoo() + other
     if isinstance(other, SpArray):
@@ -149,8 +148,8 @@ class SpArray(object):
     if other.shape != self.shape:
       raise ValueError('inconsistent shapes')
     if ss.issparse(other):
-      # XXX: what type should spmatrix * sparray result in?
-      return NotImplemented
+      # np.matrix * np.array always returns np.matrix, so for now we punt
+      return self.tocoo().multiply(other)
     if isinstance(other, SpArray):
       return self._pairwise_sparray(other, np.multiply)
     # dense * sparse -> sparse
@@ -177,7 +176,10 @@ class SpArray(object):
       return other / self.toarray()
     # Punt truediv to __mul__
     if true_divide:
-      return self.__mul__(1./other)
+      try:
+        return self.__mul__(1./other)
+      except TypeError:  # other is a spmatrix, probably
+        return self.__mul__(1./other.toarray())
     # Non-truediv cases
     if np.isscalar(other):
       return self._with_data(self.data / other)
@@ -185,8 +187,8 @@ class SpArray(object):
     if other.shape != self.shape:
       raise ValueError('inconsistent shapes')
     if ss.issparse(other):
-      # XXX: what type should spmatrix / sparray result in?
-      return NotImplemented
+      # Match __add__ and __mul__ behavior: punt to spmatrix
+      return self.tocoo() / other
     if isinstance(other, SpArray):
       return self._pairwise_sparray(other, np.multiply)
     # dense / sparse -> sparse

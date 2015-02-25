@@ -83,6 +83,12 @@ class TestUfuncs(unittest.TestCase):
     assert_array_equal(dense2d * b, (self.a * b).toarray())
     assert_array_equal(b * dense2d, (b * self.a).toarray())
 
+  def test_mul_spmatrix(self):
+    for fmt in ('csr', 'csc'):
+      b = ss.rand(*sparse2d.shape, density=0.5, format=fmt)
+      assert_sparse_equal(sparse2d.multiply(b), self.a * b)
+      assert_sparse_equal(b.multiply(sparse2d), b.multiply(self.a))
+
   def test_imul(self):
     b = np.random.random(dense2d.shape)
     a = self.a.copy()
@@ -109,7 +115,14 @@ class TestUfuncs(unittest.TestCase):
                                 np.true_divide(b, self.a))
       assert_array_almost_equal(c / dense2d, c / self.a)
 
-  def test_div_inplace(self):
+  @unittest.skip('Test needs debugging')
+  def test_div_spmatrix(self):
+    for fmt in ('csr', 'csc'):
+      b = ss.rand(*sparse2d.shape, density=0.5, format=fmt)
+      assert_array_equal(sparse2d / b, (self.a / b).toarray())
+      assert_array_equal(b / sparse2d, b / self.a)
+
+  def test_idiv(self):
     self.a /= 1
     assert_array_almost_equal(dense2d, self.a.toarray())
     b = np.random.random(dense2d.shape)
