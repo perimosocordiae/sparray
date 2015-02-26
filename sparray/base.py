@@ -159,40 +159,43 @@ class SpArray(object):
     return self.__mul__(other)
 
   def __div__(self, other):
-    return self._divide(other)  # pragma: no cover
-
-  def __truediv__(self, other):
-    return self._divide(other, true_divide=True)
-
-  def __rtruediv__(self, other):
-    return self._divide(other, true_divide=True, rdivide=True)
+    return self._divide(other)
 
   def __rdiv__(self, other):
-    return self._divide(other, rdivide=True)  # pragma: no cover
+    return self._divide(other, rdivide=True)
 
-  def _divide(self, other, true_divide=False, rdivide=False):
+  def __truediv__(self, other):
+    return self._divide(other, div_func=np.true_divide)
+
+  def __rtruediv__(self, other):
+    return self._divide(other, div_func=np.true_divide, rdivide=True)
+    return self._divide(other, rdivide=True)
+
+  def __floordiv__(self, other):
+    return self._divide(other, div_func=np.floor_divide)
+
+  def __rfloordiv__(self, other):
+    return self._divide(other, div_func=np.floor_divide, rdivide=True)
+
+  def _divide(self, other, div_func=np.divide, rdivide=False):
+    # Don't bother keeping sparsity if rhs is sparse
+    if ss.issparse(other) or isinstance(other, SpArray):
+      other = other.toarray()
+      if not rdivide:
+        return div_func(self.toarray(), other)
     if rdivide:
-      # div by 0 means we must always densify
-      return other / self.toarray()
+      return div_func(other, self.toarray())
     # Punt truediv to __mul__
-    if true_divide:
-      # Don't bother keeping sparsity if other is sparse
-      if ss.issparse(other) or isinstance(other, SpArray):
-        return np.true_divide(self.toarray(), other.toarray())
+    if div_func is np.true_divide:
       return self.__mul__(1./other)
     # Non-truediv cases
     if np.isscalar(other):
-      return self._with_data(self.data / other)
+      return self._with_data(div_func(self.data, other))
     # TODO: broadcasting
     if other.shape != self.shape:
       raise ValueError('inconsistent shapes')
-    if ss.issparse(other):
-      # Match __add__ and __mul__ behavior: punt to spmatrix
-      return self.tocoo() / other
-    if isinstance(other, SpArray):
-      return self._pairwise_sparray(other, np.divide)
     # dense / sparse -> sparse
-    return self._pairwise_dense2sparse(other, np.divide)
+    return self._pairwise_dense2sparse(other, div_func)
 
   def dot(self, other):
     if self.shape[-1] != other.shape[0]:
@@ -261,12 +264,8 @@ class SpArray(object):
         result = self.__sub__(inputs[1])
       else:
         result = self.__rsub__(inputs[0])
-    elif func is np.divide:
-      true_divide = (4/3) > 1
-      result = self._divide(*without_self, true_divide=true_divide,
-                            rdivide=(pos == 1))
-    elif func is np.true_divide:
-      result = self._divide(*without_self, true_divide=True, rdivide=(pos == 1))
+    elif func in (np.divide, np.true_divide, np.floor_divide):
+      result = self._divide(*without_self, div_func=func, rdivide=(pos==1))
     elif func in (np.minimum, np.maximum):
       result = getattr(self, func.__name__)(*without_self)
     elif func is np.absolute:

@@ -1,4 +1,3 @@
-from __future__ import division
 import unittest
 import numpy as np
 import scipy.sparse as ss
@@ -119,29 +118,41 @@ class TestUfuncs(unittest.TestCase):
     for fmt in ('csr', 'csc'):
       b = ss.rand(*sparse2d.shape, density=0.5, format=fmt)
       # spmatrix / spmatrix is broken in scipy, so we compare against ndarrays
+      # also, np.true_divide(spmatrix, x) wraps the spmatrix in an object array
+      c = b.toarray()
       with np.errstate(divide='ignore', invalid='ignore'):
-        e1 = dense2d / b.toarray()
-        e2 = b.toarray() / dense2d
-      with warnings.catch_warnings(record=True) as w:
+        e1 = dense2d / c
+        e2 = c / dense2d
+        e3 = dense2d // c
+        e4 = c // dense2d
+      with warnings.catch_warnings(record=True) as ws:
         warnings.simplefilter("always")
         assert_array_equal(e1, self.a / b)
         assert_array_equal(e2, b / self.a)
-        # each one should raise div by zero and invalid value warnings
-        self.assertEqual(len(w), 4)
+        assert_array_equal(e3, self.a // b)
+        assert_array_equal(e4, b // self.a)
+        # each operation may raise div by zero and/or invalid value warnings
+        for w in ws:
+          self.assertIn(str(w.message).split()[0], ('divide','invalid'))
 
   def test_div_sparray(self):
     s = ss.rand(*sparse2d.shape, density=0.5)
     b = SpArray.from_spmatrix(s)
     # spmatrix / spmatrix is broken in scipy, so we compare against ndarrays
+    c = s.toarray()
     with np.errstate(divide='ignore', invalid='ignore'):
-      e1 = dense2d / s.toarray()
-      e2 = s.toarray() / dense2d
+      e1 = np.true_divide(dense2d, c)
+      e2 = np.true_divide(c, dense2d)
+      e3 = np.floor_divide(dense2d, c)
+      e4 = np.floor_divide(c, dense2d)
     with warnings.catch_warnings(record=True) as w:
       warnings.simplefilter("always")
-      assert_array_equal(e1, self.a / b)
-      assert_array_equal(e2, b / self.a)
+      assert_array_equal(e1, np.true_divide(self.a, b))
+      assert_array_equal(e2, np.true_divide(b, self.a))
+      assert_array_equal(e3, np.floor_divide(self.a, b))
+      assert_array_equal(e4, np.floor_divide(b, self.a))
       # each one should raise div by zero and invalid value warnings
-      self.assertEqual(len(w), 4)
+      self.assertEqual(len(w), 8)
 
   def test_idiv(self):
     self.a /= 1
