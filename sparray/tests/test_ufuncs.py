@@ -115,12 +115,33 @@ class TestUfuncs(unittest.TestCase):
                                 np.true_divide(b, self.a))
       assert_array_almost_equal(c / dense2d, c / self.a)
 
-  @unittest.skip('Test needs debugging')
   def test_div_spmatrix(self):
     for fmt in ('csr', 'csc'):
       b = ss.rand(*sparse2d.shape, density=0.5, format=fmt)
-      assert_array_equal(sparse2d / b, (self.a / b).toarray())
-      assert_array_equal(b / sparse2d, b / self.a)
+      # spmatrix / spmatrix is broken in scipy, so we compare against ndarrays
+      with np.errstate(divide='ignore', invalid='ignore'):
+        e1 = dense2d / b.toarray()
+        e2 = b.toarray() / dense2d
+      with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        assert_array_equal(e1, self.a / b)
+        assert_array_equal(e2, b / self.a)
+        # each one should raise div by zero and invalid value warnings
+        self.assertEqual(len(w), 4)
+
+  def test_div_sparray(self):
+    s = ss.rand(*sparse2d.shape, density=0.5)
+    b = SpArray.from_spmatrix(s)
+    # spmatrix / spmatrix is broken in scipy, so we compare against ndarrays
+    with np.errstate(divide='ignore', invalid='ignore'):
+      e1 = dense2d / s.toarray()
+      e2 = s.toarray() / dense2d
+    with warnings.catch_warnings(record=True) as w:
+      warnings.simplefilter("always")
+      assert_array_equal(e1, self.a / b)
+      assert_array_equal(e2, b / self.a)
+      # each one should raise div by zero and invalid value warnings
+      self.assertEqual(len(w), 4)
 
   def test_idiv(self):
     self.a /= 1

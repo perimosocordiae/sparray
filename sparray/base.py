@@ -176,10 +176,10 @@ class SpArray(object):
       return other / self.toarray()
     # Punt truediv to __mul__
     if true_divide:
-      try:
-        return self.__mul__(1./other)
-      except TypeError:  # other is a spmatrix, probably
-        return self.__mul__(1./other.toarray())
+      # Don't bother keeping sparsity if other is sparse
+      if ss.issparse(other) or isinstance(other, SpArray):
+        return np.true_divide(self.toarray(), other.toarray())
+      return self.__mul__(1./other)
     # Non-truediv cases
     if np.isscalar(other):
       return self._with_data(self.data / other)
@@ -190,7 +190,7 @@ class SpArray(object):
       # Match __add__ and __mul__ behavior: punt to spmatrix
       return self.tocoo() / other
     if isinstance(other, SpArray):
-      return self._pairwise_sparray(other, np.multiply)
+      return self._pairwise_sparray(other, np.divide)
     # dense / sparse -> sparse
     return self._pairwise_dense2sparse(other, np.divide)
 
