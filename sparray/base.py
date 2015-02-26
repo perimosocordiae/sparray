@@ -164,10 +164,10 @@ class SpArray(object):
   def __rdiv__(self, other):
     return self._divide(other, rdivide=True)
 
-  def __truediv__(self, other):
+  def __truediv__(self, other):  # pragma: no cover
     return self._divide(other, div_func=np.true_divide)
 
-  def __rtruediv__(self, other):
+  def __rtruediv__(self, other):  # pragma: no cover
     return self._divide(other, div_func=np.true_divide, rdivide=True)
     return self._divide(other, rdivide=True)
 

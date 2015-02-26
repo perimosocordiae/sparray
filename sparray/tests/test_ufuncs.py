@@ -88,6 +88,12 @@ class TestUfuncs(unittest.TestCase):
       assert_sparse_equal(sparse2d.multiply(b), self.a * b)
       assert_sparse_equal(b.multiply(sparse2d), b.multiply(self.a))
 
+  def test_mul_sparray(self):
+    s = ss.rand(*sparse2d.shape, density=0.5)
+    b = SpArray.from_spmatrix(s)
+    assert_array_equal(np.multiply(dense2d, s), (self.a * b).toarray())
+    assert_array_equal(s.multiply(dense2d), (b * self.a).toarray())
+
   def test_imul(self):
     b = np.random.random(dense2d.shape)
     a = self.a.copy()
