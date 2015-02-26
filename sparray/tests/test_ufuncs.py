@@ -181,6 +181,21 @@ class TestUfuncs(unittest.TestCase):
     assert_array_equal(np.dot(dense2d, b), np.dot(self.a, b))
     assert_array_equal(np.dot(b, dense2d), np.dot(b, self.a))
 
+  def test_dot_spmatrix(self):
+    for fmt in ('csr', 'csc'):
+      b = ss.rand(dense2d.shape[1], dense2d.shape[0], density=0.5, format=fmt)
+      assert_sparse_equal(sparse2d.dot(b), self.a.dot(b))
+      # XXX: spmatrix.dot(SpArray) calls np.asarray on us,
+      #  which just wraps us in an object array.
+      # assert_sparse_equal(b.dot(sparse2d), b.dot(self.a))
+
+  def test_dot_sparray(self):
+    s = ss.rand(dense2d.shape[1], dense2d.shape[0], density=0.5)
+    d = s.toarray()
+    b = SpArray.from_spmatrix(s)
+    assert_array_equal(dense2d.dot(d), self.a.dot(b).toarray())
+    assert_array_equal(d.dot(dense2d), b.dot(self.a).toarray())
+
   def test_minmax(self):
     self.assertEqual(dense2d.min(), self.a.min())
     self.assertEqual(dense2d.max(), self.a.max())

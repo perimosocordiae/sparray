@@ -201,11 +201,16 @@ class SpArray(object):
     if self.shape[-1] != other.shape[0]:
       raise ValueError('Dimension mismatch: %s dot %s' % (
           self.shape, other.shape))
-    if isinstance(other, SpArray) or ss.issparse(other):
-      # TODO: sparse version
-      return NotImplemented
-    # dense version
-    # TODO: optimize
+    # if other is sparse, use spmatrix dot
+    if ss.issparse(other) or isinstance(other, SpArray):
+      out_shape = self.shape[:-1] + other.shape[1:]
+      lhs_shape = (np.product(self.shape[:-1]), self.shape[-1])
+      lhs = self.reshape(lhs_shape).tocoo()
+      if isinstance(other, SpArray):
+        rhs_shape = (other.shape[0], np.product(other.shape[1:]))
+        other = other.reshape(rhs_shape).tocoo()
+      return SpArray.from_spmatrix(lhs.dot(other)).reshape(out_shape)
+    # dense rhs always returns dense result
     return self.toarray().dot(other)
 
   def _rdot(self, other):
