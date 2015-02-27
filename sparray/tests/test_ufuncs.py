@@ -151,14 +151,15 @@ class TestUfuncs(unittest.TestCase):
       e2 = np.true_divide(c, dense2d)
       e3 = np.floor_divide(dense2d, c)
       e4 = np.floor_divide(c, dense2d)
-    with warnings.catch_warnings(record=True) as w:
+    with warnings.catch_warnings(record=True) as ws:
       warnings.simplefilter("always")
       assert_array_equal(e1, np.true_divide(self.a, b))
       assert_array_equal(e2, np.true_divide(b, self.a))
       assert_array_equal(e3, np.floor_divide(self.a, b))
       assert_array_equal(e4, np.floor_divide(b, self.a))
-      # each one should raise div by zero and invalid value warnings
-      self.assertEqual(len(w), 8)
+      # each operation may raise div by zero and/or invalid value warnings
+      for w in ws:
+        self.assertIn(str(w.message).split()[0], ('divide','invalid'))
 
   def test_idiv(self):
     self.a /= 1
@@ -190,11 +191,14 @@ class TestUfuncs(unittest.TestCase):
       # assert_sparse_equal(b.dot(sparse2d), b.dot(self.a))
 
   def test_dot_sparray(self):
-    s = ss.rand(dense2d.shape[1], dense2d.shape[0], density=0.5)
-    d = s.toarray()
-    b = SpArray.from_spmatrix(s)
-    assert_array_equal(dense2d.dot(d), self.a.dot(b).toarray())
-    assert_array_equal(d.dot(dense2d), b.dot(self.a).toarray())
+    m,n = dense2d.shape
+    shapes = ((n,), (n,m), (2,n,m))
+    for shape in shapes:
+      d = np.random.random(shape)
+      d.flat[np.random.randint(2, size=d.size)] = 0
+      e = dense2d.dot(d)
+      b = SpArray.from_ndarray(d)
+      assert_array_equal(e, self.a.dot(b).toarray())
 
   def test_minmax(self):
     self.assertEqual(dense2d.min(), self.a.min())

@@ -55,6 +55,8 @@ class SpArray(object):
     elif len(axes) == 1 and self.ndim > 1:
       axes = axes[0]
     new_shape = tuple(self.shape[i] for i in axes)
+    if self.shape == new_shape:
+      return self
     # Hack: convert our flat indices into the new shape's flat indices.
     old_multi_index = np.unravel_index(self.indices, self.shape)
     new_multi_index = tuple(old_multi_index[i] for i in axes)
@@ -198,17 +200,24 @@ class SpArray(object):
     return self._pairwise_dense2sparse(other, div_func)
 
   def dot(self, other):
-    if self.shape[-1] != other.shape[0]:
-      raise ValueError('Dimension mismatch: %s dot %s' % (
+    ax1 = len(self.shape) - 1
+    ax2 = max(0, len(other.shape) - 2)
+    if self.shape[ax1] != other.shape[ax2]:
+      raise ValueError('shapes %s and %s not aligned' % (
           self.shape, other.shape))
     # if other is sparse, use spmatrix dot
     if ss.issparse(other) or isinstance(other, SpArray):
-      out_shape = self.shape[:-1] + other.shape[1:]
-      lhs_shape = (np.product(self.shape[:-1]), self.shape[-1])
+      out_shape = self.shape[:-1] + other.shape[:ax2] + other.shape[ax2+1:]
+      lhs_shape = (int(np.product(self.shape[:-1])), self.shape[ax1])
       lhs = self.reshape(lhs_shape).tocoo()
       if isinstance(other, SpArray):
-        rhs_shape = (other.shape[0], np.product(other.shape[1:]))
+        # transpose so ax2 comes first
+        axes = (ax2,) + tuple(range(ax2)) + tuple(range(ax2+1,len(other.shape)))
+        other = other.transpose(*axes)
+        # reshape to 2d for spmatrix
+        rhs_shape = (other.shape[0], int(np.product(other.shape[1:])))
         other = other.reshape(rhs_shape).tocoo()
+      # convert back to a SpArray with the correct shape
       return SpArray.from_spmatrix(lhs.dot(other)).reshape(out_shape)
     # dense rhs always returns dense result
     return self.toarray().dot(other)
