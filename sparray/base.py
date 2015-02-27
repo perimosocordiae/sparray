@@ -223,14 +223,8 @@ class SpArray(object):
     return self.toarray().dot(other)
 
   def _rdot(self, other):
-    if other.shape[-1] != self.shape[0]:
-      raise ValueError('Dimension mismatch: %s dot %s' % (
-          other.shape, self.shape))
-    if isinstance(other, SpArray) or ss.issparse(other):
-      # TODO: sparse version
-      return NotImplemented
-    # dense version
-    # TODO: optimize
+    # This only gets called for dense other,
+    # because spmatrix.dot(x) calls np.asarray(x)
     return other.dot(self.toarray())
 
   def _with_data(self, data):
