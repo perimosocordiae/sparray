@@ -217,9 +217,13 @@ class SpArray(object):
         # reshape to 2d for spmatrix
         rhs_shape = (other.shape[0], int(np.product(other.shape[1:])))
         other = other.reshape(rhs_shape).tocoo()
+      result = lhs.dot(other)
       # convert back to a SpArray with the correct shape
-      return SpArray.from_spmatrix(lhs.dot(other)).reshape(out_shape)
+      if not out_shape:  # scalar case, return a scalar
+        return result[0,0]
+      return SpArray.from_spmatrix(result).reshape(out_shape)
     # dense rhs always returns dense result
+    # TODO: optimize vector dot product case
     return self.toarray().dot(other)
 
   def _rdot(self, other):

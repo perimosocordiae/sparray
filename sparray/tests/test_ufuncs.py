@@ -6,6 +6,7 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 from sparray import SpArray
 
 dense2d = np.array([[0,0,0],[4,5,7],[6,2,0],[1,3,8]], dtype=float) / 2.
+dense1d = np.array([1,2,0,1,0])
 
 sparse2d = ss.csr_matrix(dense2d)
 with warnings.catch_warnings():
@@ -22,6 +23,7 @@ class TestUfuncs(unittest.TestCase):
     dense2d_indices = [1,3,4,5,6,7,9,10,11]
     dense2d_data = [0,2,2.5,3.5,3,1,0.5,1.5,4]
     self.sp2d = SpArray(dense2d_indices, dense2d_data, shape=dense2d.shape)
+    self.sp1d = SpArray([0,1,3], [1,2,1], shape=dense1d.shape)
 
   def test_add_dense(self):
     b = np.random.random(dense2d.shape)
@@ -182,6 +184,10 @@ class TestUfuncs(unittest.TestCase):
     assert_array_equal(np.dot(dense2d, b), np.dot(self.sp2d, b))
     assert_array_equal(np.dot(b, dense2d), np.dot(b, self.sp2d))
 
+    b = np.random.random(dense1d.shape[0])
+    self.assertEqual(dense1d.dot(b), self.sp1d.dot(b))
+    self.assertEqual(b.dot(dense1d), b.dot(self.sp1d))
+
   def test_dot_spmatrix(self):
     for fmt in ('csr', 'csc'):
       b = ss.rand(dense2d.shape[1], dense2d.shape[0], density=0.5, format=fmt)
@@ -199,6 +205,12 @@ class TestUfuncs(unittest.TestCase):
       e = dense2d.dot(d)
       b = SpArray.from_ndarray(d)
       assert_array_equal(e, self.sp2d.dot(b).toarray())
+
+    d = np.random.random(dense1d.shape[0])
+    d.flat[np.random.randint(2, size=d.size)] = 0
+    b = SpArray.from_ndarray(d)
+    self.assertEqual(dense1d.dot(d), self.sp1d.dot(b))
+    self.assertEqual(d.dot(dense1d), b.dot(self.sp1d))
 
   def test_minmax(self):
     self.assertEqual(dense2d.min(), self.sp2d.min())
