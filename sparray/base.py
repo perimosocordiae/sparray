@@ -253,7 +253,7 @@ class SpArray(object):
       return self._with_data(np.minimum(self.data, other))
     if isinstance(other, SpArray) or ss.issparse(other):
       # TODO: sparse version
-      return NotImplemented
+      raise NotImplementedError('Sparse np.minimum is NYI')
     # Probably won't get a sparse result
     return np.minimum(self.toarray(), other)
 
@@ -262,7 +262,7 @@ class SpArray(object):
       return self._with_data(np.maximum(self.data, other))
     if isinstance(other, SpArray) or ss.issparse(other):
       # TODO: sparse version
-      return NotImplemented
+      raise NotImplementedError('Sparse np.maximum is NYI')
     # Probably won't get a sparse result
     return np.maximum(self.toarray(), other)
 
