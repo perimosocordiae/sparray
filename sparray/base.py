@@ -117,22 +117,28 @@ class SpArray(object):
       return NotImplemented  # Not interpretable as an array
     return self._with_data(ufunc(self.data, other.flat[self.indices]))
 
+  def _handle_broadcasting(self, other):
+    if other.shape != self.shape:
+      bshape = broadcast_shapes(self.shape, other.shape)
+      if self.shape != bshape or isinstance(other, SpArray):
+        raise ValueError('Broadcasting is NYI on the SpArray side')
+      other = np.broadcast_to(other, bshape)
+    return self, other
+
   def __add__(self, other):
     if np.isscalar(other):
       if other == 0:
         return self.copy()
       raise NotImplementedError('adding a nonzero scalar to a sparse array '
                                 'is not supported')
-    # TODO: broadcasting
-    if other.shape != self.shape:
-      raise ValueError('inconsistent shapes')
     if ss.issparse(other):
       # np.matrix + np.array always returns np.matrix, so for now we punt
       return self.tocoo() + other
-    if isinstance(other, SpArray):
-      return self._pairwise_sparray(other, np.add)
+    lhs, rhs = self._handle_broadcasting(other)
+    if isinstance(rhs, SpArray):
+      return lhs._pairwise_sparray(rhs, np.add)
     # dense addition
-    return self._pairwise_dense2dense(other, np.add)
+    return lhs._pairwise_dense2dense(rhs, np.add)
 
   def __radd__(self, other):
     return self.__add__(other)
@@ -146,16 +152,14 @@ class SpArray(object):
   def __mul__(self, other):
     if np.isscalar(other):
       return self._with_data(self.data * other)
-    # TODO: broadcasting
-    if other.shape != self.shape:
-      raise ValueError('inconsistent shapes')
     if ss.issparse(other):
       # np.matrix * np.array always returns np.matrix, so for now we punt
       return self.tocoo().multiply(other)
-    if isinstance(other, SpArray):
-      return self._pairwise_sparray(other, np.multiply)
+    lhs, rhs = self._handle_broadcasting(other)
+    if isinstance(rhs, SpArray):
+      return lhs._pairwise_sparray(rhs, np.multiply)
     # dense * sparse -> sparse
-    return self._pairwise_dense2sparse(other, np.multiply)
+    return lhs._pairwise_dense2sparse(rhs, np.multiply)
 
   def __rmul__(self, other):
     return self.__mul__(other)
@@ -193,11 +197,9 @@ class SpArray(object):
     # Non-truediv cases
     if np.isscalar(other):
       return self._with_data(div_func(self.data, other))
-    # TODO: broadcasting
-    if other.shape != self.shape:
-      raise ValueError('inconsistent shapes')
+    lhs, rhs = self._handle_broadcasting(other)
     # dense / sparse -> sparse
-    return self._pairwise_dense2sparse(other, div_func)
+    return lhs._pairwise_dense2sparse(rhs, div_func)
 
   def dot(self, other):
     ax1 = len(self.shape) - 1
@@ -380,3 +382,11 @@ for npfunc in ss.base._ufuncs_with_fixed_point_at_zero:
     return method
 
   setattr(SpArray, name, _create_method(npfunc))
+
+
+# Re-create np.broadcast rules, but for shapes instead of array-likes
+def broadcast_shapes(*shapes):
+  # this uses a tricky hack to make fake ndarrays
+  x = np.array(0)
+  fake_arrays = [np.broadcast_to(x, s) for s in shapes]
+  return np.broadcast(*fake_arrays).shape

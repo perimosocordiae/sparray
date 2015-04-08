@@ -25,12 +25,16 @@ class TestUfuncs(unittest.TestCase):
     self.sp2d = SpArray(dense2d_indices, dense2d_data, shape=dense2d.shape)
     self.sp1d = SpArray([0,1,3], [1,2,1], shape=dense1d.shape)
 
-  def test_add_dense(self):
+  def test_add_ndarray(self):
     b = np.random.random(dense2d.shape)
     assert_array_equal(dense2d + b, self.sp2d + b)
     assert_array_equal(b + dense2d, b + self.sp2d)
     assert_array_equal(np.add(dense2d, b), np.add(self.sp2d, b))
     assert_array_equal(np.add(b, dense2d), np.add(b, self.sp2d))
+    # Test broadcasting
+    b = np.random.random((dense2d.shape[0], 1))
+    assert_array_equal(dense2d + b, self.sp2d + b)
+    assert_array_equal(b + dense2d, b + self.sp2d)
 
   def test_add_spmatrix(self):
     for fmt in ('coo', 'csr', 'csc'):
@@ -65,14 +69,18 @@ class TestUfuncs(unittest.TestCase):
     self.sp2d += b
     assert_array_equal(dense2d + s, self.sp2d.toarray())
 
-  def test_sub(self):
+  def test_sub_ndarray(self):
     b = np.random.random(dense2d.shape)
     assert_array_equal(dense2d - b, self.sp2d - b)
     assert_array_equal(b - dense2d, b - self.sp2d)
     assert_array_equal(np.subtract(dense2d, b), np.subtract(self.sp2d, b))
     assert_array_equal(np.subtract(b, dense2d), np.subtract(b, self.sp2d))
+    # Test broadcasting
+    b = np.random.random((dense2d.shape[0], 1))
+    assert_array_equal(dense2d - b, self.sp2d - b)
+    assert_array_equal(b - dense2d, b - self.sp2d)
 
-  def test_mul(self):
+  def test_mul_ndarray(self):
     b = np.random.random(dense2d.shape)
     assert_array_equal(dense2d * b, (self.sp2d * b).toarray())
     assert_array_equal(b * dense2d, (b * self.sp2d).toarray())
@@ -80,9 +88,15 @@ class TestUfuncs(unittest.TestCase):
                        np.multiply(self.sp2d, b).toarray())
     assert_array_equal(np.multiply(b, dense2d),
                        np.multiply(b, self.sp2d).toarray())
-    b = 3  # scalar case
+    # Test broadcasting
+    b = np.random.random((dense2d.shape[0], 1))
     assert_array_equal(dense2d * b, (self.sp2d * b).toarray())
     assert_array_equal(b * dense2d, (b * self.sp2d).toarray())
+
+  def test_mul_scalar(self):
+    for b in (3, -3.5, 0):
+      assert_array_equal(dense2d * b, (self.sp2d * b).toarray())
+      assert_array_equal(b * dense2d, (b * self.sp2d).toarray())
 
   def test_mul_spmatrix(self):
     for fmt in ('csr', 'csc'):
@@ -106,20 +120,25 @@ class TestUfuncs(unittest.TestCase):
     a *= b
     assert_array_equal(dense2d * b, a.toarray())
 
-  def test_div(self):
+  def test_div_ndarray(self):
     b = np.random.random(dense2d.shape)
-    c = 3  # scalar case
+    c = np.random.random((dense2d.shape[0], 1))  # Test broadcasting
     assert_array_almost_equal(dense2d / b, (self.sp2d / b).toarray())
+    assert_array_almost_equal(dense2d / c, (self.sp2d / c).toarray())
     assert_array_almost_equal(np.divide(dense2d, b),
                               np.divide(self.sp2d, b).toarray())
     assert_array_almost_equal(np.true_divide(dense2d, b),
                               np.true_divide(self.sp2d, b).toarray())
-    assert_array_almost_equal(dense2d / c, (self.sp2d / c).toarray())
     with np.errstate(divide='ignore'):
       assert_array_almost_equal(b / dense2d, b / self.sp2d)
       assert_array_almost_equal(np.divide(b, dense2d), np.divide(b, self.sp2d))
       assert_array_almost_equal(np.true_divide(b, dense2d),
                                 np.true_divide(b, self.sp2d))
+
+  def test_div_scalar(self):
+    c = 3
+    assert_array_almost_equal(dense2d / c, (self.sp2d / c).toarray())
+    with np.errstate(divide='ignore'):
       assert_array_almost_equal(c / dense2d, c / self.sp2d)
 
   def test_div_spmatrix(self):
