@@ -113,8 +113,6 @@ class SpArray(object):
   def _pairwise_dense2sparse(self, other, ufunc):
     '''ufunc(dense, sparse) -> sparse'''
     other = np.asanyarray(other)
-    if other.ndim == 0 and other.dtype == np.object_:
-      return NotImplemented  # Not interpretable as an array
     return self._with_data(ufunc(self.data, other.flat[self.indices]))
 
   def _handle_broadcasting(self, other):
@@ -137,7 +135,7 @@ class SpArray(object):
     return lhs, rhs
 
   def _broadcast(self, shape):
-    # XXX: hack! Need to avoid densifying here.
+    # TODO: fix this hack! Need to avoid densifying here.
     return SpArray.from_ndarray(np.broadcast_to(self.toarray(), shape))
 
   def __add__(self, other):
@@ -185,12 +183,11 @@ class SpArray(object):
   def __rdiv__(self, other):
     return self._divide(other, rdivide=True)
 
-  def __truediv__(self, other):  # pragma: no cover
+  def __truediv__(self, other):
     return self._divide(other, div_func=np.true_divide)
 
-  def __rtruediv__(self, other):  # pragma: no cover
+  def __rtruediv__(self, other):
     return self._divide(other, div_func=np.true_divide, rdivide=True)
-    return self._divide(other, rdivide=True)
 
   def __floordiv__(self, other):
     return self._divide(other, div_func=np.floor_divide)

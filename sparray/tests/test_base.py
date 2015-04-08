@@ -123,6 +123,9 @@ class TestAttrs(unittest.TestCase):
       assert_array_equal(getattr(sparse2d, attr).A,
                          getattr(self.a, attr).toarray())
 
+  def test_nonexistent_attr(self):
+    self.assertRaises(AttributeError, lambda: getattr(self.a, 'xxxx'))
+
 
 if __name__ == '__main__':
   unittest.main()

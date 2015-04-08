@@ -18,12 +18,15 @@ def assert_sparse_equal(a, b):
   return assert_array_equal(a.toarray(), b.toarray())
 
 
-class TestUfuncs(unittest.TestCase):
+class TestUfuncsBase(unittest.TestCase):
   def setUp(self):
     dense2d_indices = [1,3,4,5,6,7,9,10,11]
     dense2d_data = [0,2,2.5,3.5,3,1,0.5,1.5,4]
     self.sp2d = SpArray(dense2d_indices, dense2d_data, shape=dense2d.shape)
     self.sp1d = SpArray([0,1,3], [1,2,1], shape=dense1d.shape)
+
+
+class TestUfuncs(TestUfuncsBase):
 
   def test_add_ndarray(self):
     b = np.random.random(dense2d.shape)
@@ -212,6 +215,10 @@ class TestUfuncs(unittest.TestCase):
     b = np.random.random(dense1d.shape[0])
     self.assertEqual(dense1d.dot(b), self.sp1d.dot(b))
     self.assertEqual(b.dot(dense1d), b.dot(self.sp1d))
+
+    # Test bad alignment for dot
+    b = np.random.random(dense1d.shape[0] + 1)
+    self.assertRaises(ValueError, lambda: self.sp1d.dot(b))
 
   def test_dot_spmatrix(self):
     for fmt in ('csr', 'csc'):
