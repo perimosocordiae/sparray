@@ -269,8 +269,6 @@ class SpArray(object):
   def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
     '''ufunc dispatcher. Mostly copied from scipy.sparse.spmatrix'''
     out = kwargs.pop('out', None)
-    if method != '__call__' or kwargs:
-      return NotImplemented
 
     without_self = list(inputs)
     del without_self[pos]

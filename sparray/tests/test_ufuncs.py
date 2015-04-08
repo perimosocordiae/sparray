@@ -62,10 +62,6 @@ class TestUfuncs(TestUfuncsBase):
   def test_add_inplace(self):
     self.sp2d += 0
     assert_array_equal(dense2d, self.sp2d.toarray())
-    # np.add with out kwarg
-    res = np.add(self.sp2d, 0, out=self.sp2d)
-    self.assertIs(res, self.sp2d)
-    assert_array_equal(dense2d, self.sp2d.toarray())
     # sparray += sparray
     s = ss.rand(*sparse2d.shape, density=0.5)
     b = SpArray.from_spmatrix(s)
@@ -267,6 +263,23 @@ class TestUfuncs(TestUfuncsBase):
     with np.errstate(invalid='ignore', divide='ignore'):
       for ufunc in ss.base._ufuncs_with_fixed_point_at_zero:
         assert_array_equal(ufunc(dense2d), ufunc(self.sp2d).toarray())
+
+  def test_not_implemented_ufunc(self):
+    self.assertRaises(TypeError, np.log, self.sp2d)
+
+  def test_dense_out_kwarg(self):
+    b = 3
+    out1 = np.zeros_like(dense2d)
+    out2 = np.zeros_like(dense2d)
+    np.multiply(dense2d, b, out=out1)
+    res = np.multiply(self.sp2d, b, out=out2)
+    self.assertIs(res, out2)
+    assert_array_equal(out1, out2)
+
+  def test_sparray_out_kwarg(self):
+    res = np.add(self.sp2d, 0, out=self.sp2d)
+    self.assertIs(res, self.sp2d)
+    assert_array_equal(dense2d, self.sp2d.toarray())
 
 
 if __name__ == '__main__':
