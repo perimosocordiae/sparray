@@ -251,18 +251,22 @@ class SpArray(object):
   def minimum(self, other):
     if np.isscalar(other) and other >= 0:
       return self._with_data(np.minimum(self.data, other))
-    if isinstance(other, SpArray) or ss.issparse(other):
-      # TODO: sparse version
-      raise NotImplementedError('Sparse np.minimum is NYI')
+    if isinstance(other, SpArray):
+      return self._pairwise_sparray(other, np.minimum)
+    if ss.issparse(other):
+      # For now, convert to SpArray first and then do the operation
+      return self._pairwise_sparray(SpArray.from_spmatrix(other), np.minimum)
     # Probably won't get a sparse result
     return np.minimum(self.toarray(), other)
 
   def maximum(self, other):
     if np.isscalar(other) and other <= 0:
       return self._with_data(np.maximum(self.data, other))
-    if isinstance(other, SpArray) or ss.issparse(other):
-      # TODO: sparse version
-      raise NotImplementedError('Sparse np.maximum is NYI')
+    if isinstance(other, SpArray):
+      return self._pairwise_sparray(other, np.maximum)
+    if ss.issparse(other):
+      # For now, convert to SpArray first and then do the operation
+      return self._pairwise_sparray(SpArray.from_spmatrix(other), np.maximum)
     # Probably won't get a sparse result
     return np.maximum(self.toarray(), other)
 

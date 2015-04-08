@@ -249,19 +249,21 @@ class TestUfuncs(TestUfuncsBase):
     assert_array_equal(np.minimum(dense2d, b), np.minimum(self.sp2d, b))
     assert_array_equal(np.maximum(dense2d, b), np.maximum(self.sp2d, b))
 
-  @unittest.skip
   def test_minmax_imum_sparray(self):
     s = ss.rand(*sparse2d.shape, density=0.5)
     b = SpArray.from_spmatrix(s)
-    assert_array_equal(np.minimum(dense2d, s), np.minimum(self.sp2d, b))
-    assert_array_equal(np.maximum(dense2d, s), np.maximum(self.sp2d, b))
+    assert_array_equal(np.minimum(dense2d, s),
+                       np.minimum(self.sp2d, b).toarray())
+    assert_array_equal(np.maximum(dense2d, s),
+                       np.maximum(self.sp2d, b).toarray())
 
-  @unittest.skip
   def test_minmax_imum_spmatrix(self):
     for fmt in ('csr', 'csc'):
       b = ss.rand(*sparse2d.shape, density=0.5, format=fmt)
-      assert_array_equal(np.minimum(dense2d, b), np.minimum(self.sp2d, b))
-      assert_array_equal(np.maximum(dense2d, b), np.maximum(self.sp2d, b))
+      assert_array_equal(np.minimum(dense2d, b),
+                         np.minimum(self.sp2d, b).toarray())
+      assert_array_equal(np.maximum(dense2d, b),
+                         np.maximum(self.sp2d, b).toarray())
 
   def test_minmax_imum_scalar(self):
     b = 3
