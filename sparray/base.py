@@ -118,12 +118,27 @@ class SpArray(object):
     return self._with_data(ufunc(self.data, other.flat[self.indices]))
 
   def _handle_broadcasting(self, other):
-    if other.shape != self.shape:
-      bshape = broadcast_shapes(self.shape, other.shape)
-      if self.shape != bshape or isinstance(other, SpArray):
-        raise ValueError('Broadcasting is NYI on the SpArray side')
-      other = np.broadcast_to(other, bshape)
-    return self, other
+    if other.shape == self.shape:
+      return self, other
+    # Find a shape that we can broadcast to
+    bshape = broadcast_shapes(self.shape, other.shape)
+    # Do broadcasting for the lhs
+    if self.shape == bshape:
+      lhs = self
+    else:
+      lhs = self._broadcast(bshape)
+    # Do broadcasting for the rhs
+    if other.shape == bshape:
+      rhs = other
+    elif isinstance(other, SpArray):
+      rhs = other._broadcast(bshape)
+    else:
+      rhs = np.broadcast_to(other, bshape, subok=True)
+    return lhs, rhs
+
+  def _broadcast(self, shape):
+    # XXX: hack! Need to avoid densifying here.
+    return SpArray.from_ndarray(np.broadcast_to(self.toarray(), shape))
 
   def __add__(self, other):
     if np.isscalar(other):

@@ -109,6 +109,12 @@ class TestUfuncs(unittest.TestCase):
     b = SpArray.from_spmatrix(s)
     assert_array_equal(np.multiply(dense2d, s), (self.sp2d * b).toarray())
     assert_array_equal(s.multiply(dense2d), (b * self.sp2d).toarray())
+    # Test broadcasting
+    for shape in [(sparse2d.shape[0], 1), (1, sparse2d.shape[1])]:
+      s = ss.rand(*shape, density=0.5)
+      b = SpArray.from_spmatrix(s)
+      assert_array_equal(np.multiply(dense2d, s), (self.sp2d * b).toarray())
+      assert_array_equal(s.multiply(dense2d), (b * self.sp2d).toarray())
 
   def test_imul(self):
     b = np.random.random(dense2d.shape)
