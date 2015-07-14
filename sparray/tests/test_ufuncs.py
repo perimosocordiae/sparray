@@ -15,7 +15,7 @@ with warnings.catch_warnings():
 
 
 def assert_sparse_equal(a, b):
-  return assert_array_equal(a.toarray(), b.toarray())
+  return assert_array_equal(a.A, b.A)
 
 
 class TestUfuncsBase(unittest.TestCase):
