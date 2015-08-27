@@ -15,7 +15,11 @@ with warnings.catch_warnings():
 
 
 def assert_sparse_equal(a, b):
-  return assert_array_equal(a.A, b.A)
+  if hasattr(a, 'A'):
+    a = a.A
+  if hasattr(b, 'A'):
+    b = b.A
+  return assert_array_equal(a, b)
 
 
 class TestUfuncsBase(unittest.TestCase):
@@ -106,14 +110,14 @@ class TestUfuncs(TestUfuncsBase):
   def test_mul_sparray(self):
     s = ss.rand(*sparse2d.shape, density=0.5)
     b = SpArray.from_spmatrix(s)
-    assert_array_equal(np.multiply(dense2d, s), (self.sp2d * b).toarray())
-    assert_array_equal(s.multiply(dense2d), (b * self.sp2d).toarray())
+    assert_sparse_equal(np.multiply(dense2d, s), self.sp2d * b)
+    assert_sparse_equal(s.multiply(dense2d), b * self.sp2d)
     # Test broadcasting
     for shape in [(sparse2d.shape[0], 1), (1, sparse2d.shape[1])]:
       s = ss.rand(*shape, density=0.5)
       b = SpArray.from_spmatrix(s)
-      assert_array_equal(np.multiply(dense2d, s), (self.sp2d * b).toarray())
-      assert_array_equal(s.multiply(dense2d), (b * self.sp2d).toarray())
+      assert_sparse_equal(np.multiply(dense2d, s), self.sp2d * b)
+      assert_sparse_equal(s.multiply(dense2d), b * self.sp2d)
 
   def test_imul(self):
     b = np.random.random(dense2d.shape)
