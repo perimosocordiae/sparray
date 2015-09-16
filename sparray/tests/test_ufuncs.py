@@ -292,7 +292,7 @@ class TestUfuncs(TestUfuncsBase):
       d.flat[np.random.randint(2, size=d.size)] = 0
       e = dense2d.dot(d)
       b = SpArray.from_ndarray(d)
-      assert_array_equal(e, self.sp2d.dot(b).toarray())
+      assert_array_almost_equal(e, self.sp2d.dot(b).toarray())
 
     d = np.random.random(dense1d.shape[0])
     d.flat[np.random.randint(2, size=d.size)] = 0
