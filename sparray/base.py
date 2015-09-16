@@ -1,7 +1,9 @@
 import numpy as np
 import scipy.sparse as ss
 
-from compat import broadcast_to, ufuncs_with_fixed_point_at_zero
+from compat import (
+    broadcast_to, broadcast_shapes, ufuncs_with_fixed_point_at_zero
+)
 
 
 class SpArray(object):
@@ -14,8 +16,8 @@ class SpArray(object):
   __array_priority__ = 999
 
   def __init__(self, indices, data, shape=None):
-    indices = np.array(indices, dtype=int).ravel()
-    data = np.array(data).ravel()
+    indices = np.array(indices, dtype=int, copy=False).ravel()
+    data = np.array(data, copy=False).ravel()
     assert len(indices) == len(data), '# inds (%d) != # data (%d)' % (
         len(indices), len(data))
     if shape is None:
@@ -28,11 +30,15 @@ class SpArray(object):
 
   @staticmethod
   def from_ndarray(arr):
+    '''Converts an array-like to a SpArray object.'''
+    arr = np.array(arr, copy=False)
     mask = arr.flat != 0
-    return SpArray(np.nonzero(mask)[0], arr.flat[mask], shape=arr.shape)
+    idx, = np.nonzero(mask)
+    return SpArray(idx, arr.flat[mask], shape=arr.shape)
 
   @staticmethod
   def from_spmatrix(mat):
+    '''Converts a scipy.sparse matrix to a SpArray object'''
     mat = mat.tocoo()
     inds = np.ravel_multi_index((mat.row, mat.col), mat.shape)
     return SpArray(inds, mat.data, shape=mat.shape)
@@ -44,7 +50,7 @@ class SpArray(object):
 
   def tocoo(self):
     assert len(self.shape) == 2
-    row,col = np.unravel_index(self.indices, self.shape)
+    row, col = np.unravel_index(self.indices, self.shape)
     return ss.coo_matrix((self.data, (row, col)), shape=self.shape)
 
   def getnnz(self):
@@ -94,28 +100,35 @@ class SpArray(object):
     self.shape = new_shape
 
   def ravel(self):
-    return self.reshape((np.prod(self.shape),))
+    n = int(np.prod(self.shape))
+    return SpArray(self.indices, self.data, shape=(n,))
 
   def _pairwise_sparray(self, other, ufunc):
-    '''ufunc(sparse, sparse) -> sparse'''
+    '''Helper function for the pattern: ufunc(sparse, sparse) -> sparse
+    other : SpArray
+    '''
     idx = np.union1d(self.indices, other.indices)
     dtype = np.promote_types(self.dtype, other.dtype)
     data = np.zeros(len(idx), dtype=dtype)
     # TODO: keep indices sorted to make this much faster
-    for i,ix in enumerate(idx):
+    for i, ix in enumerate(idx):
       lhs = self.data[self.indices==ix].sum()
       rhs = other.data[other.indices==ix].sum()
       data[i] = ufunc(lhs, rhs)
     return SpArray(idx, data, self.shape)
 
   def _pairwise_dense2dense(self, other, ufunc):
-    '''ufunc(dense, sparse) -> dense'''
+    '''Helper function for the pattern: ufunc(dense, sparse) -> dense
+    other : ndarray
+    '''
     result = other.copy(order='C')
     result.flat[self.indices] = ufunc(result.flat[self.indices], self.data)
     return result
 
   def _pairwise_dense2sparse(self, other, ufunc):
-    '''ufunc(dense, sparse) -> sparse'''
+    '''Helper function for the pattern: ufunc(dense, sparse) -> sparse
+    other : array_like
+    '''
     other = np.asanyarray(other)
     return self._with_data(ufunc(self.data, other.flat[self.indices]))
 
@@ -152,6 +165,7 @@ class SpArray(object):
       # np.matrix + np.array always returns np.matrix, so for now we punt
       return self.tocoo() + other
     lhs, rhs = self._handle_broadcasting(other)
+    assert isinstance(lhs, SpArray)
     if isinstance(rhs, SpArray):
       return lhs._pairwise_sparray(rhs, np.add)
     # dense addition
@@ -173,6 +187,7 @@ class SpArray(object):
       # np.matrix * np.array always returns np.matrix, so for now we punt
       return self.tocoo().multiply(other)
     lhs, rhs = self._handle_broadcasting(other)
+    assert isinstance(lhs, SpArray)
     if isinstance(rhs, SpArray):
       return lhs._pairwise_sparray(rhs, np.multiply)
     # dense * sparse -> sparse
@@ -209,7 +224,7 @@ class SpArray(object):
       return div_func(other, self.toarray())
     # Punt truediv to __mul__
     if div_func is np.true_divide:
-      return self.__mul__(1./other)
+      return self.__mul__(1. / other)
     # Non-truediv cases
     if np.isscalar(other):
       return self._with_data(div_func(self.data, other))
@@ -221,8 +236,8 @@ class SpArray(object):
     ax1 = len(self.shape) - 1
     ax2 = max(0, len(other.shape) - 2)
     if self.shape[ax1] != other.shape[ax2]:
-      raise ValueError('shapes %s and %s not aligned' % (
-          self.shape, other.shape))
+      raise ValueError('shapes %s and %s not aligned' % (self.shape,
+                                                         other.shape))
     # if other is sparse, use spmatrix dot
     if ss.issparse(other) or isinstance(other, SpArray):
       out_shape = self.shape[:-1] + other.shape[:ax2] + other.shape[ax2+1:]
@@ -384,6 +399,7 @@ class SpArray(object):
     # TODO: axis kwarg
     return self.data.max()
 
+
 # Add the numpy unary ufuncs for which func(0) = 0
 for npfunc in ufuncs_with_fixed_point_at_zero:
   name = npfunc.__name__
@@ -400,11 +416,3 @@ for npfunc in ufuncs_with_fixed_point_at_zero:
     return method
 
   setattr(SpArray, name, _create_method(npfunc))
-
-
-# Re-create np.broadcast rules, but for shapes instead of array-likes
-def broadcast_shapes(*shapes):
-  # this uses a tricky hack to make fake ndarrays
-  x = np.array(0)
-  fake_arrays = [broadcast_to(x, s) for s in shapes]
-  return np.broadcast(*fake_arrays).shape

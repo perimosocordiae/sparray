@@ -1,7 +1,9 @@
 import numpy as np
 import scipy.sparse as ss
 
-__all__ = ['broadcast_to', 'ufuncs_with_fixed_point_at_zero']
+__all__ = [
+    'broadcast_to', 'broadcast_shapes', 'ufuncs_with_fixed_point_at_zero'
+]
 
 if hasattr(np, 'broadcast_to'):
   broadcast_to = np.broadcast_to
@@ -19,10 +21,19 @@ else:
         broadcast.__array_finalize__(array)
     return broadcast
 
+
+# Re-create np.broadcast rules, but for shapes instead of array-likes
+def broadcast_shapes(*shapes):
+  # this uses a tricky hack to make fake ndarrays
+  x = np.array(0)
+  fake_arrays = [broadcast_to(x, s) for s in shapes]
+  return np.broadcast(*fake_arrays).shape
+
+
 if hasattr(ss.base, '_ufuncs_with_fixed_point_at_zero'):
   ufuncs_with_fixed_point_at_zero = ss.base._ufuncs_with_fixed_point_at_zero
 else:
   ufuncs_with_fixed_point_at_zero = frozenset((
-    np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh, np.arcsinh,
-    np.arctanh, np.rint, np.sign, np.expm1, np.log1p, np.deg2rad, np.rad2deg,
-    np.floor, np.ceil, np.trunc, np.sqrt))
+      np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh, np.arcsinh,
+      np.arctanh, np.rint, np.sign, np.expm1, np.log1p, np.deg2rad, np.rad2deg,
+      np.floor, np.ceil, np.trunc, np.sqrt))
