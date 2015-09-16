@@ -258,7 +258,7 @@ class TestUfuncs(TestUfuncsBase):
     assert_array_equal(dense2d.dot(b), self.sp2d.dot(b))
 
     b = np.random.random(dense1d.shape[0])
-    self.assertEqual(dense1d.dot(b), self.sp1d.dot(b))
+    self.assertAlmostEqual(dense1d.dot(b), self.sp1d.dot(b))
 
     # Test bad alignment for dot
     b = np.random.random(dense1d.shape[0] + 1)

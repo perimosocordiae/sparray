@@ -255,8 +255,12 @@ class SpArray(object):
       if not out_shape:  # scalar case, return a scalar
         return result[0,0]
       return SpArray.from_spmatrix(result).reshape(out_shape)
+
+    # other is dense
+    if self.ndim == 1 and other.ndim == 1:
+      # TODO: allow other shapes for self here
+      return other[self.indices].dot(self.data)
     # dense rhs always returns dense result
-    # TODO: optimize vector dot product case
     return self.toarray().dot(other)
 
   def _rdot(self, other):
