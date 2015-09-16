@@ -16,7 +16,8 @@ install:
   # Useful for debugging any issues with conda
   - conda info -a
 
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION scipy Cython
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION scipy
   - source activate test-environment
   - python setup.py install
+  - python -c 'import scipy; print(scipy.__version__)'
 script: nosetests
