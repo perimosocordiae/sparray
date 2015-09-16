@@ -3,4 +3,5 @@ htmlcov/
 .coverage
 build/
 *.egg-info/
+.eggs/
 .idea/
