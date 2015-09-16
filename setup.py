@@ -12,8 +12,7 @@ setup(
     license='MIT',
     packages=['sparray'],
     install_requires=[
-        'numpy >= 1.10',
-        'scipy >= 0.16',
-        'Cython >= 0.20',
+        'numpy >= 1.9',
+        'scipy >= 0.15',
     ],
 )
