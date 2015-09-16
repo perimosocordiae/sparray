@@ -1,6 +1,8 @@
 import numpy as np
 import scipy.sparse as ss
 
+from compat import broadcast_to, ufuncs_with_fixed_point_at_zero
+
 
 class SpArray(object):
   '''Simple sparse ndarray-like, similar to scipy.sparse matrices.
@@ -9,6 +11,8 @@ class SpArray(object):
     self.indices : int64 array of nonzero flat indices
     self.shape : tuple of integers, ala ndarray shape
   '''
+  __array_priority__ = 999
+
   def __init__(self, indices, data, shape=None):
     indices = np.array(indices, dtype=int).ravel()
     data = np.array(data).ravel()
@@ -131,12 +135,12 @@ class SpArray(object):
     elif isinstance(other, SpArray):
       rhs = other._broadcast(bshape)
     else:
-      rhs = np.broadcast_to(other, bshape, subok=True)
+      rhs = broadcast_to(other, bshape, subok=True)
     return lhs, rhs
 
   def _broadcast(self, shape):
     # TODO: fix this hack! Need to avoid densifying here.
-    return SpArray.from_ndarray(np.broadcast_to(self.toarray(), shape))
+    return SpArray.from_ndarray(broadcast_to(self.toarray(), shape))
 
   def __add__(self, other):
     if np.isscalar(other):
@@ -300,7 +304,7 @@ class SpArray(object):
       result = abs(self)
     elif func in (np.conj, np.conjugate):
       result = self.conj()
-    elif func in ss.base._ufuncs_with_fixed_point_at_zero:
+    elif func in ufuncs_with_fixed_point_at_zero:
       result = getattr(self, func.__name__)()
     else:
       return NotImplemented
@@ -381,12 +385,7 @@ class SpArray(object):
     return self.data.max()
 
 # Add the numpy unary ufuncs for which func(0) = 0
-# Copied from scipy.sparse.base
-_ufuncs_with_fixed_point_at_zero = frozenset((
-  np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh, np.arcsinh,
-  np.arctanh, np.rint, np.sign, np.expm1, np.log1p, np.deg2rad, np.rad2deg,
-  np.floor, np.ceil, np.trunc, np.sqrt))
-for npfunc in _ufuncs_with_fixed_point_at_zero:
+for npfunc in ufuncs_with_fixed_point_at_zero:
   name = npfunc.__name__
 
   def _create_method(op):
@@ -407,5 +406,5 @@ for npfunc in _ufuncs_with_fixed_point_at_zero:
 def broadcast_shapes(*shapes):
   # this uses a tricky hack to make fake ndarrays
   x = np.array(0)
-  fake_arrays = [np.broadcast_to(x, s) for s in shapes]
+  fake_arrays = [broadcast_to(x, s) for s in shapes]
   return np.broadcast(*fake_arrays).shape
