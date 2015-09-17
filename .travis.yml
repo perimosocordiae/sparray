@@ -18,6 +18,7 @@ install:
 
   - conda create -q -n testenv python=$TRAVIS_PYTHON_VERSION scipy pip nose setuptools
   - source activate testenv
+  - pip install coveralls nose-cov
   - python setup.py install
-  - python -c 'import scipy; print(scipy.__version__); import scipy.sparse'
-script: nosetests
+script: nosetests --with-cov --cov=sparray/ sparray/tests/
+after_success: coveralls
