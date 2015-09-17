@@ -72,6 +72,11 @@ class TestUfuncs(TestUfuncsBase):
     b = SpArray.from_spmatrix(s)
     assert_array_equal(dense2d + s, (self.sp2d + b).toarray())
     assert_array_equal(s + dense2d, (b + self.sp2d).toarray())
+    # Test broadcasting
+    s = ss.rand(sparse2d.shape[0], 1, density=0.5)
+    b = SpArray.from_spmatrix(s)
+    assert_sparse_equal(dense2d + s, self.sp2d + b)
+    assert_sparse_equal(s + dense2d, b + self.sp2d)
 
   def test_add_scalar(self):
     b = 0
@@ -304,14 +309,25 @@ class TestUfuncs(TestUfuncsBase):
     self.assertEqual(dense2d.min(), self.sp2d.min())
     self.assertEqual(dense2d.max(), self.sp2d.max())
 
-  @unittest.skipUnless(HAS_NUMPY_UFUNC, 'Requires __numpy_ufunc__ support')
   def test_minmax_imum_ndarray(self):
+    b = np.random.random(dense2d.shape)
+    assert_array_equal(np.minimum(dense2d, b), self.sp2d.minimum(b))
+    assert_array_equal(np.maximum(dense2d, b), self.sp2d.maximum(b))
+
+  @unittest.skipUnless(HAS_NUMPY_UFUNC, 'Requires __numpy_ufunc__ support')
+  def test_minmax_imum_ndarray_ufunc(self):
     b = np.random.random(dense2d.shape)
     assert_array_equal(np.minimum(dense2d, b), np.minimum(self.sp2d, b))
     assert_array_equal(np.maximum(dense2d, b), np.maximum(self.sp2d, b))
 
-  @unittest.skipUnless(HAS_NUMPY_UFUNC, 'Requires __numpy_ufunc__ support')
   def test_minmax_imum_sparray(self):
+    s = ss.rand(*sparse2d.shape, density=0.5)
+    b = SpArray.from_spmatrix(s)
+    assert_sparse_equal(s.minimum(dense2d), b.minimum(self.sp2d))
+    assert_sparse_equal(s.maximum(dense2d), b.maximum(self.sp2d))
+
+  @unittest.skipUnless(HAS_NUMPY_UFUNC, 'Requires __numpy_ufunc__ support')
+  def test_minmax_imum_sparray_ufunc(self):
     s = ss.rand(*sparse2d.shape, density=0.5)
     b = SpArray.from_spmatrix(s)
     assert_array_equal(np.minimum(dense2d, s),
@@ -319,8 +335,14 @@ class TestUfuncs(TestUfuncsBase):
     assert_array_equal(np.maximum(dense2d, s),
                        np.maximum(self.sp2d, b).toarray())
 
-  @unittest.skipUnless(HAS_NUMPY_UFUNC, 'Requires __numpy_ufunc__ support')
   def test_minmax_imum_spmatrix(self):
+    for fmt in ('csr', 'csc'):
+      b = ss.rand(*sparse2d.shape, density=0.5, format=fmt)
+      assert_sparse_equal(b.minimum(dense2d), self.sp2d.minimum(b))
+      assert_sparse_equal(b.maximum(dense2d), self.sp2d.maximum(b))
+
+  @unittest.skipUnless(HAS_NUMPY_UFUNC, 'Requires __numpy_ufunc__ support')
+  def test_minmax_imum_spmatrix_ufunc(self):
     for fmt in ('csr', 'csc'):
       b = ss.rand(*sparse2d.shape, density=0.5, format=fmt)
       assert_array_equal(np.minimum(dense2d, b),
@@ -328,8 +350,16 @@ class TestUfuncs(TestUfuncsBase):
       assert_array_equal(np.maximum(dense2d, b),
                          np.maximum(self.sp2d, b).toarray())
 
-  @unittest.skipUnless(HAS_NUMPY_UFUNC, 'Requires __numpy_ufunc__ support')
   def test_minmax_imum_scalar(self):
+    b = 3
+    assert_array_equal(np.minimum(dense2d, b), self.sp2d.minimum(b).A)
+    assert_array_equal(np.maximum(dense2d, b), self.sp2d.maximum(b))
+    b = -3
+    assert_array_equal(np.minimum(dense2d, b), self.sp2d.minimum(b))
+    assert_array_equal(np.maximum(dense2d, b), self.sp2d.maximum(b).A)
+
+  @unittest.skipUnless(HAS_NUMPY_UFUNC, 'Requires __numpy_ufunc__ support')
+  def test_minmax_imum_scalar_ufunc(self):
     b = 3
     assert_array_equal(np.minimum(dense2d, b), np.minimum(self.sp2d, b).A)
     assert_array_equal(np.maximum(dense2d, b), np.maximum(self.sp2d, b))
@@ -343,6 +373,12 @@ class TestUfuncs(TestUfuncsBase):
 
   def test_abs(self):
     assert_array_equal(abs(dense2d), abs(self.sp2d).toarray())
+
+  def test_fixed_point_at_zero_methods(self):
+    with np.errstate(invalid='ignore', divide='ignore'):
+      for ufunc in ufuncs_with_fixed_point_at_zero:
+        method = getattr(self.sp2d, ufunc.__name__)
+        assert_array_equal(ufunc(dense2d), method().toarray())
 
   @unittest.skipUnless(HAS_NUMPY_UFUNC, 'Requires __numpy_ufunc__ support')
   def test_fixed_point_at_zero_ufuncs(self):
