@@ -297,6 +297,27 @@ class SpArray(object):
     # Probably won't get a sparse result
     return np.maximum(self.toarray(), other)
 
+  def sum(self, axis=None, dtype=None):
+    if dtype is None:
+      dtype = self.dtype
+    if axis is None:
+      return self.data.sum(dtype=dtype)
+    # XXX: we don't support tuples of axes, yet
+    axis = int(axis)
+    new_shape = self.shape[:axis] + self.shape[axis+1:]
+    if not new_shape:
+      return self.data.sum(dtype=dtype)
+    axis_inds = np.unravel_index(self.indices, self.shape)
+    axis_inds = axis_inds[:axis] + axis_inds[axis+1:]
+    flat_inds = np.ravel_multi_index(axis_inds, new_shape)
+    new_idx, data_idx = np.unique(flat_inds, return_inverse=True)
+    # Note: we can't use:
+    #    new_data = np.zeros(new_idx.shape, dtype=dtype)
+    #    new_data[data_idx] += self.data
+    # here, because the fancy index doesn't return a proper view.
+    new_data = np.bincount(data_idx, self.data.astype(dtype, copy=False))
+    return SpArray(new_idx, new_data, shape=new_shape)
+
   def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
     '''ufunc dispatcher. Mostly copied from scipy.sparse.spmatrix'''
     out = kwargs.pop('out', None)

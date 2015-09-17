@@ -374,6 +374,16 @@ class TestUfuncs(TestUfuncsBase):
   def test_abs(self):
     assert_array_equal(abs(dense2d), abs(self.sp2d).toarray())
 
+  def test_sum(self):
+    # axis=None
+    self.assertEqual(dense1d.sum(), self.sp1d.sum())
+    self.assertEqual(dense2d.sum(), self.sp2d.sum())
+    # axis=0
+    self.assertEqual(dense1d.sum(axis=0), self.sp1d.sum(axis=0))
+    assert_sparse_equal(dense2d.sum(axis=0), self.sp2d.sum(axis=0))
+    # axis=1
+    assert_sparse_equal(dense2d.sum(axis=1), self.sp2d.sum(axis=1))
+
   def test_fixed_point_at_zero_methods(self):
     with np.errstate(invalid='ignore', divide='ignore'):
       for ufunc in ufuncs_with_fixed_point_at_zero:
