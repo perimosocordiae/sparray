@@ -233,6 +233,9 @@ class SpArray(object):
     # dense / sparse -> sparse
     return lhs._pairwise_dense2sparse(rhs, div_func)
 
+  def __matmul__(self, other):
+    return self.dot(other)
+
   def dot(self, other):
     ax1 = len(self.shape) - 1
     ax2 = max(0, len(other.shape) - 2)
