@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 import numpy as np
 import scipy.sparse as ss
 
-from compat import (
+from .compat import (
     broadcast_to, broadcast_shapes, ufuncs_with_fixed_point_at_zero
 )
 

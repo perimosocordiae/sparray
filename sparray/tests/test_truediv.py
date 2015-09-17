@@ -1,9 +1,9 @@
-from __future__ import division
+from __future__ import division, absolute_import
 import unittest
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
-from test_ufuncs import TestUfuncsBase, dense2d
+from .test_ufuncs import TestUfuncsBase, dense2d
 
 
 class TestTrueDivision(TestUfuncsBase):
