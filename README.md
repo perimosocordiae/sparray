@@ -1,5 +1,7 @@
 # SpArray
 
+[![Build Status](https://travis-ci.org/perimosocordiae/sparray.svg?branch=master)](https://travis-ci.org/perimosocordiae/sparray)
+
 A library for Sparse Array manipulation in Python.
 
 ## TODO list
