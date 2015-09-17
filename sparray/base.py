@@ -55,7 +55,29 @@ class SpArray(object):
     return ss.coo_matrix((self.data, (row, col)), shape=self.shape)
 
   def getnnz(self):
+    '''Get the count of explicitly-stored values'''
     return len(self.indices)
+
+  nnz = property(fget=getnnz, doc=getnnz.__doc__)
+
+  def nonzero(self):
+    '''Returns a tuple of arrays containing indices of non-zero elements.
+    Note: Does not include explicitly-stored zeros.
+    '''
+    nz_inds = self.indices[self.data!=0]
+    return np.unravel_index(nz_inds)
+
+  def __len__(self):
+    # Mimic ndarray here, instead of spmatrix
+    return self.shape[0]
+
+  def __bool__(self):
+    if np.prod(self.shape) == 1:
+      return len(self.data)
+    raise ValueError("The truth value of an array with more than one "
+                     "element is ambiguous. Use a.any() or a.all().")
+
+  __nonzero__ = __bool__
 
   def transpose(self, *axes):
     if self.ndim < 2:
@@ -272,6 +294,12 @@ class SpArray(object):
     # because spmatrix.dot(x) calls np.asarray(x)
     return other.dot(self.toarray())
 
+  def __pow__(self, exponent):
+    if exponent == 0:
+      # TODO: Should probably warn that we're losing sparsity here
+      raise np.ones(self.shape, dtype=self.dtype)
+    return self._with_data(self.data ** exponent)
+
   def _with_data(self, data):
     return SpArray(self.indices.copy(), data, self.shape)
 
@@ -317,6 +345,24 @@ class SpArray(object):
     # here, because the fancy index doesn't return a proper view.
     new_data = np.bincount(data_idx, self.data.astype(dtype, copy=False))
     return SpArray(new_idx, new_data, shape=new_shape)
+
+  def mean(self, axis=None, dtype=None):
+    if dtype is None:
+      dtype = self.dtype
+    # Mimic numpy upcasting
+    if np.can_cast(dtype, np.float_):
+      dtype = np.float_
+    elif np.can_cast(dtype, np.complex_):
+      dtype = np.complex_
+    s = self.sum(axis=axis, dtype=dtype)
+    if axis is None:
+      num_elts = np.prod(self.shape)
+    else:
+      # XXX: we don't support tuples of axes, yet
+      num_elts = self.shape[axis]
+    if num_elts != 1:
+      s /= num_elts
+    return s
 
   def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
     '''ufunc dispatcher. Mostly copied from scipy.sparse.spmatrix'''
@@ -371,10 +417,6 @@ class SpArray(object):
       return self.toarray()
     if attr == 'T':
       return self.transpose()
-    if attr == 'real':
-      return self._real()
-    if attr == 'imag':
-      return self._imag()
     if attr == 'size':
       return self.getnnz()
     if attr == 'ndim':
@@ -387,10 +429,12 @@ class SpArray(object):
   def __abs__(self):
     return self._with_data(abs(self.data))
 
-  def _real(self):
+  @property
+  def real(self):
     return self._with_data(self.data.real)
 
-  def _imag(self):
+  @property
+  def imag(self):
     return self._with_data(self.data.imag)
 
   def __neg__(self):
@@ -416,6 +460,9 @@ class SpArray(object):
 
   def conj(self):
     return self._with_data(self.data.conj())
+
+  def conjugate(self):
+    return self.conj()
 
   def copy(self):
     return self._with_data(self.data.copy())
