@@ -227,6 +227,27 @@ class TestUfuncs(TestUfuncsBase):
     # spmatrix / spmatrix is broken in scipy, so we compare against ndarrays
     c = s.toarray()
     with np.errstate(divide='ignore', invalid='ignore'):
+      e1 = dense2d / c
+      e2 = c / dense2d
+      e3 = dense2d // c
+      e4 = c // dense2d
+    with warnings.catch_warnings(record=True) as ws:
+      warnings.simplefilter("always")
+      assert_array_equal(e1, self.sp2d / b)
+      assert_array_equal(e2, b / self.sp2d)
+      assert_array_equal(e3, self.sp2d // b)
+      assert_array_equal(e4, b // self.sp2d)
+      # each operation may raise div by zero and/or invalid value warnings
+      for w in ws:
+        self.assertIn(str(w.message).split()[0], ('divide','invalid'))
+
+  @unittest.skipUnless(HAS_NUMPY_UFUNC, 'Requires __numpy_ufunc__ support')
+  def test_div_sparray_ufunc(self):
+    s = ss.rand(*sparse2d.shape, density=0.5)
+    b = SpArray.from_spmatrix(s)
+    # spmatrix / spmatrix is broken in scipy, so we compare against ndarrays
+    c = s.toarray()
+    with np.errstate(divide='ignore', invalid='ignore'):
       e1 = np.true_divide(dense2d, c)
       e2 = np.true_divide(c, dense2d)
       e3 = np.floor_divide(dense2d, c)
