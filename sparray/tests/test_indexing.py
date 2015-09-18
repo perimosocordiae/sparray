@@ -36,6 +36,10 @@ class TestIndexing(TestUfuncsBase):
     for dense_row, sparse_row in zip(dense2d, self.sp2d):
       assert_array_equal(dense_row, sparse_row.toarray())
 
+  def test_diagonal(self):
+    assert_array_equal(dense2d.diagonal(), self.sp2d.diagonal().toarray())
+    self.assertRaises(ValueError, lambda: self.sp1d.diagonal())
+
   @unittest.expectedFailure
   def test_inner_indexing(self):
     idx = [0,2]

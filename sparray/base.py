@@ -97,8 +97,18 @@ class SpArray(object):
     new_inds = np.ravel_multi_index(new_multi_index, new_shape)
     return SpArray(new_inds, self.data, new_shape)
 
-  def diagonal(offset=0, axis1=0, axis2=1):
-    raise NotImplementedError('TODO: add diagonal()')
+  def diagonal(self, offset=0, axis1=0, axis2=1):
+    if axis1 == axis2:
+      raise ValueError('axis1 and axis2 cannot be the same')
+    if self.ndim < 2:
+      raise ValueError('diagonal requires at least two dimensions')
+    # TODO: support offsets, different axes, ndim > 2, etc
+    if self.ndim > 2:
+      raise NotImplementedError('diagonal() is NYI for ndim > 2')
+    if offset != 0 or axis1 != 0 or axis2 != 1:
+      raise NotImplementedError('diagonal() is NYI for non-default parameters')
+    idx = np.arange(min(self.shape))
+    return self._slice_multi((idx, idx), inner=True)
 
   def __repr__(self):
     return '<%s-SpArray of type %s\n\twith %d stored elements>' % (
@@ -183,6 +193,24 @@ class SpArray(object):
           mut_indices[axis] += dim
     return tuple(mut_indices)
 
+  def _slice_multi(self, indices, inner=True):
+    '''Helper for making a new SpArray using (int,array-like) indices.
+    dense[ii,jj]         -> sparse._slice_multi((ii, jj), inner=True)
+    dense[ii[:,None],jj] -> sparse._slice_multi((ii, jj), inner=False)
+    '''
+    shape = tuple(len(idx) for idx in indices
+                  if not isinstance(idx, numbers.Integral))
+    if inner:
+      assert len(set(shape)) == 1
+      shape = (shape[0],)
+    flat_idx = np.ravel_multi_index(indices, self.shape)
+    # TODO: when indices are sorted, use searchsorted here
+    mask = np.in1d(self.indices, flat_idx, assume_unique=True)
+    inv_mask = np.in1d(flat_idx, self.indices[mask], assume_unique=True)
+    new_indices, = inv_mask.nonzero()
+    new_data = self.data[mask]
+    return SpArray(new_indices, new_data, shape)
+
   def __getitem__(self, indices):
     indices = self._prepare_indices(indices)
 
@@ -204,14 +232,7 @@ class SpArray(object):
       # TODO: find a way to avoid this, combining into a "flat range"?
       indices = [np.arange(*idx.indices(dim)) if isinstance(idx, slice) else idx
                  for idx, dim in zip(indices, self.shape)]
-      flat_idx = np.ravel_multi_index(indices, self.shape)
-      # TODO: when indices are sorted, use searchsorted here
-      mask = np.in1d(self.indices, flat_idx, assume_unique=True)
-      inv_mask = np.in1d(flat_idx, self.indices[mask], assume_unique=True)
-      new_indices, = inv_mask.nonzero()
-      new_data = self.data[mask]
-      new_shape = tuple(len(idx) for idx in indices if hasattr(idx, 'shape'))
-      return SpArray(new_indices, new_data, new_shape)
+      return self._slice_multi(indices, inner=False)
 
     # TODO: implement the harder cases
     raise NotImplementedError('Fancy slicing is still NYI')
