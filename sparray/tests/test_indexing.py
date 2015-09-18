@@ -41,6 +41,11 @@ class TestIndexing(TestUfuncsBase):
     self.assertRaises(ValueError, lambda: self.sp1d.diagonal())
 
   @unittest.expectedFailure
+  def test_slicing(self):
+    assert_array_equal(dense1d[1:], self.sp1d[1:].toarray())
+    assert_array_equal(dense2d[1:,1:], self.sp2d[1:,1:].toarray())
+
+  @unittest.expectedFailure
   def test_inner_indexing(self):
     idx = [0,2]
     assert_array_equal(dense1d[idx], self.sp1d[idx].toarray())
