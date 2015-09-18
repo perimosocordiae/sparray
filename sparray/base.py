@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import numbers
 import numpy as np
 import scipy.sparse as ss
 
@@ -65,7 +66,7 @@ class SpArray(object):
     Note: Does not include explicitly-stored zeros.
     '''
     nz_inds = self.indices[self.data!=0]
-    return np.unravel_index(nz_inds)
+    return np.unravel_index(nz_inds, self.shape)
 
   def __len__(self):
     # Mimic ndarray here, instead of spmatrix
@@ -128,6 +129,92 @@ class SpArray(object):
   def ravel(self):
     n = int(np.prod(self.shape))
     return SpArray(self.indices, self.data, shape=(n,))
+
+  def __iter__(self):
+    for i in range(self.shape[0]):
+      yield self[i]
+
+  def _prepare_indices(self, index):
+    # avoid dealing with non-tuple cases
+    if not isinstance(index, tuple):
+      mut_indices = [index]
+    else:
+      mut_indices = list(index)
+    missing_dims = len(self.shape) - len(mut_indices)
+
+    # check for Ellipsis
+    ell_inds = [i for i, idx in enumerate(mut_indices) if idx is Ellipsis]
+    if ell_inds:
+      # according to http://sourceforge.net/p/numpy/mailman/message/12594675/,
+      # only the first Ellipsis is "real", and the rest are just slice(None)
+      for i in ell_inds[1:]:
+        mut_indices[i] = slice(None)
+      # insert as many colons as we need at the first Ellipsis position
+      ell_pos = ell_inds[0]
+      mut_indices[ell_pos:ell_pos+1] = [slice(None)] * (missing_dims+1)
+    elif missing_dims > 0:
+      mut_indices.extend([slice(None)] * missing_dims)
+
+    # check for array-like indices
+    # TODO: handle indices with ndim > 1
+    for i, idx in enumerate(mut_indices):
+      if isinstance(idx, (slice, numbers.Integral)):
+        continue
+      if not hasattr(idx, 'ndim'):
+        idx = np.array(idx, copy=False, subok=True, order='A')
+      if idx.ndim > 1:
+        raise NotImplementedError('Multi-dimensional indexing is NYI')
+      if np.issubdtype(idx.dtype, bool):
+        idx, = idx.nonzero()
+      mut_indices[i] = idx
+
+    if len(mut_indices) > len(self.shape):
+      raise IndexError('too many indices for SpArray')
+    # indices now match our shape, and each index is int|slice|array
+    assert len(mut_indices) == len(self.shape)
+
+    # do some simple checking / fixup
+    for axis, (idx, dim) in enumerate(zip(mut_indices, self.shape)):
+      if isinstance(idx, numbers.Integral):
+        if not (-dim <= idx < dim):
+          raise IndexError('index %d is out of bounds '
+                           'for axis %d with size %d' % (idx, axis, dim))
+        if idx < 0:
+          mut_indices[axis] += dim
+    return tuple(mut_indices)
+
+  def __getitem__(self, indices):
+    indices = self._prepare_indices(indices)
+
+    # trivial case: all slices are colons
+    if all(idx == slice(None) for idx in indices):
+      return self
+
+    # simple case: all indices are simple int indexes
+    if all(isinstance(idx, numbers.Integral) for idx in indices):
+      flat_idx = np.ravel_multi_index(indices, self.shape)
+      # TODO: when indices are sorted, use searchsorted here
+      if flat_idx not in self.indices:
+        return 0
+      return self.data[np.argmax(self.indices == flat_idx)]
+
+    # non-fancy case: all indices are slices or integers
+    if not any(hasattr(idx, 'shape') for idx in indices):
+      # convert slices to ranges
+      # TODO: find a way to avoid this, combining into a "flat range"?
+      indices = [np.arange(*idx.indices(dim)) if isinstance(idx, slice) else idx
+                 for idx, dim in zip(indices, self.shape)]
+      flat_idx = np.ravel_multi_index(indices, self.shape)
+      # TODO: when indices are sorted, use searchsorted here
+      mask = np.in1d(self.indices, flat_idx, assume_unique=True)
+      inv_mask = np.in1d(flat_idx, self.indices[mask], assume_unique=True)
+      new_indices, = inv_mask.nonzero()
+      new_data = self.data[mask]
+      new_shape = tuple(len(idx) for idx in indices if hasattr(idx, 'shape'))
+      return SpArray(new_indices, new_data, new_shape)
+
+    # TODO: implement the harder cases
+    raise NotImplementedError('Fancy slicing is still NYI')
 
   def _pairwise_sparray(self, other, ufunc):
     '''Helper function for the pattern: ufunc(sparse, sparse) -> sparse
