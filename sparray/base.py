@@ -222,6 +222,10 @@ class SpArray(object):
   def __rmul__(self, other):
     return self.__mul__(other)
 
+  def multiply(self, other):
+    '''Element-wise multiplication. Alias for self * other'''
+    return self.__mul__(other)
+
   def __div__(self, other):
     return self._divide(other)
 
