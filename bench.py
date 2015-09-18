@@ -33,8 +33,15 @@ def main():
               csc=arr.tocsc(),
               dense=arr.toarray(),
               SpArray=SpArray.from_spmatrix(arr))
-  print('Benchmark: `arr.sum()`')
-  run_bench(lambda a: a.sum(), fmts)
+
+  benches = {
+      'arr.sum()': lambda a: a.sum(),
+      'arr * 3': lambda a: a * 3,
+  }
+
+  for label, fn in benches.iteritems():
+    print('Benchmark: `%s`' % label)
+    run_bench(fn, fmts)
 
 if __name__ == '__main__':
   main()
