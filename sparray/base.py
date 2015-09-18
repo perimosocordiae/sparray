@@ -96,6 +96,9 @@ class SpArray(object):
     new_inds = np.ravel_multi_index(new_multi_index, new_shape)
     return SpArray(new_inds, self.data, new_shape)
 
+  def diagonal(offset=0, axis1=0, axis2=1):
+    raise NotImplementedError('TODO: add diagonal()')
+
   def __repr__(self):
     return '<%s-SpArray of type %s\n\twith %d stored elements>' % (
         self.shape, self.data.dtype, self.getnnz())
