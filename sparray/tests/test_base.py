@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import scipy.sparse as ss
 import warnings
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_array_almost_equal
 from sparray import SpArray
 
 dense2d = np.array([[0,0,0],[4,5,7],[6,2,0],[1,3,8]], dtype=float) / 2.
@@ -25,6 +25,14 @@ def assert_sparse_equal(a, b):
   if hasattr(b, 'A'):
     b = b.A
   return assert_array_equal(a, b)
+
+
+def assert_sparse_almost_equal(a, b):
+  if hasattr(a, 'A'):
+    a = a.A
+  if hasattr(b, 'A'):
+    b = b.A
+  return assert_array_almost_equal(a, b)
 
 
 class BaseSpArrayTest(unittest.TestCase):

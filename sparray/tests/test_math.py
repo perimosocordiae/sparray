@@ -8,7 +8,8 @@ from sparray import SpArray
 from sparray.compat import ufuncs_with_fixed_point_at_zero
 
 from .test_base import (
-    assert_sparse_equal, BaseSpArrayTest, dense2d, sparse2d, dense1d
+    assert_sparse_equal, assert_sparse_almost_equal,
+    BaseSpArrayTest, dense2d, sparse2d, dense1d
 )
 
 
@@ -112,7 +113,7 @@ class TestMath(BaseSpArrayTest):
     assert_array_equal(dense2d * b, a.toarray())
 
   def test_div_scalar(self):
-    self._same_op(lambda x: x / 3, assert_sparse_equal)
+    self._same_op(lambda x: x / 3, assert_sparse_almost_equal)
     with np.errstate(divide='ignore'):
       assert_array_almost_equal(3 / dense2d, 3 / self.sp2d)
 
