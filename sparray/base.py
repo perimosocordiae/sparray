@@ -73,7 +73,7 @@ class SpArray(object):
     return self.shape[0]
 
   def __bool__(self):
-    if np.prod(self.shape) == 1:
+    if np.prod(self.shape) <= 1:
       return len(self.data)
     raise ValueError("The truth value of an array with more than one "
                      "element is ambiguous. Use a.any() or a.all().")

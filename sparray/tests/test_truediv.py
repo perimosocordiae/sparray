@@ -3,10 +3,10 @@ import unittest
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
-from .test_ufuncs import TestUfuncsBase, dense2d
+from .test_base import BaseSpArrayTest, dense2d
 
 
-class TestTrueDivision(TestUfuncsBase):
+class TestTrueDivision(BaseSpArrayTest):
 
   def test_truediv(self):
     c = 3

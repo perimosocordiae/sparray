@@ -3,10 +3,10 @@ import numpy as np
 import unittest
 from numpy.testing import assert_array_equal
 
-from .test_ufuncs import TestUfuncsBase, dense2d, dense1d
+from .test_base import BaseSpArrayTest, dense2d, dense1d
 
 
-class TestIndexing(TestUfuncsBase):
+class TestIndexing(BaseSpArrayTest):
 
   def test_simple_indexing(self):
     for i in [0, 1, len(dense1d)-1, -1]:
