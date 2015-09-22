@@ -74,7 +74,7 @@ class SpArray(object):
 
   def __bool__(self):
     if np.prod(self.shape) <= 1:
-      return len(self.data)
+      return bool(len(self.data))
     raise ValueError("The truth value of an array with more than one "
                      "element is ambiguous. Use a.any() or a.all().")
 
@@ -174,7 +174,7 @@ class SpArray(object):
         idx = np.array(idx, copy=False, subok=True, order='A')
       if idx.ndim > 1:
         raise NotImplementedError('Multi-dimensional indexing is NYI')
-      if np.issubdtype(idx.dtype, bool):
+      if idx.dtype in (bool, np.bool_):
         idx, = idx.nonzero()
       mut_indices[i] = idx
 
@@ -215,7 +215,7 @@ class SpArray(object):
     indices = self._prepare_indices(indices)
 
     # trivial case: all slices are colons
-    if all(idx == slice(None) for idx in indices):
+    if all(isinstance(idx, slice) and idx == slice(None) for idx in indices):
       return self
 
     # simple case: all indices are simple int indexes
@@ -410,9 +410,11 @@ class SpArray(object):
     return other.dot(self.toarray())
 
   def __pow__(self, exponent):
+    # TODO: Should probably warn when we're losing sparsity
     if exponent == 0:
-      # TODO: Should probably warn that we're losing sparsity here
-      raise np.ones(self.shape, dtype=self.dtype)
+      return np.ones(self.shape, dtype=self.dtype)
+    elif exponent < 0:
+      return self.toarray() ** exponent
     return self._with_data(self.data ** exponent)
 
   def _with_data(self, data):

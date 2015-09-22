@@ -13,6 +13,11 @@ from .test_base import (
 
 
 class TestMath(BaseSpArrayTest):
+  def setUp(self):
+    BaseSpArrayTest.setUp(self)
+    # add complex test data
+    d = dense2d * 1j
+    self.pairs.append((d, SpArray.from_ndarray(d)))
 
   def test_add_ndarray(self):
     b = np.random.random(dense2d.shape)
@@ -42,8 +47,8 @@ class TestMath(BaseSpArrayTest):
 
   def test_add_scalar(self):
     b = 0
-    assert_array_equal(dense2d + b, (self.sp2d + b).toarray())
-    assert_array_equal(b + dense2d, (b + self.sp2d).toarray())
+    self._same_op(lambda x: x + b, assert_sparse_equal)
+    self._same_op(lambda x: b + x, assert_sparse_equal)
     b = 1
     self.assertRaises(NotImplementedError, lambda: self.sp2d + b)
     self.assertRaises(NotImplementedError, lambda: b + self.sp2d)
@@ -77,13 +82,14 @@ class TestMath(BaseSpArrayTest):
 
   def test_mul_scalar(self):
     for b in (3, -3.5, 0):
-      assert_array_equal(dense2d * b, (self.sp2d * b).toarray())
-      assert_array_equal(b * dense2d, (b * self.sp2d).toarray())
+      self._same_op(lambda x: x * b, assert_sparse_equal)
+      self._same_op(lambda x: b * x, assert_sparse_equal)
 
   def test_mul_spmatrix(self):
     for fmt in ('csr', 'csc'):
       b = ss.rand(*sparse2d.shape, density=0.5, format=fmt)
       assert_sparse_equal(sparse2d.multiply(b), self.sp2d * b)
+      assert_sparse_equal(sparse2d.multiply(b), self.sp2d.multiply(b))
 
   def test_mul_sparray(self):
     s = ss.rand(*sparse2d.shape, density=0.5)
@@ -106,10 +112,9 @@ class TestMath(BaseSpArrayTest):
     assert_array_equal(dense2d * b, a.toarray())
 
   def test_div_scalar(self):
-    c = 3
-    assert_array_almost_equal(dense2d / c, (self.sp2d / c).toarray())
+    self._same_op(lambda x: x / 3, assert_sparse_equal)
     with np.errstate(divide='ignore'):
-      assert_array_almost_equal(c / dense2d, c / self.sp2d)
+      assert_array_almost_equal(3 / dense2d, 3 / self.sp2d)
 
   def test_div_spmatrix(self):
     for fmt in ('csr', 'csc'):
@@ -172,6 +177,13 @@ class TestMath(BaseSpArrayTest):
 
   def test_conj(self):
     self._same_op(lambda x: x.conj(), assert_sparse_equal)
+    self._same_op(lambda x: x.conjugate(), assert_sparse_equal)
+
+  def test_pow(self):
+    self._same_op(lambda x: x**2, assert_sparse_equal)
+    with np.errstate(divide='ignore', invalid='ignore'):
+      self._same_op(lambda x: x**-1.5, assert_array_almost_equal)
+      self._same_op(lambda x: x**0, assert_array_almost_equal)
 
   def test_dot_ndarray(self):
     b = np.random.random(dense2d.shape[::-1])

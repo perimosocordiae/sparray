@@ -39,6 +39,13 @@ class TestIndexing(BaseSpArrayTest):
   def test_diagonal(self):
     assert_array_equal(dense2d.diagonal(), self.sp2d.diagonal().toarray())
     self.assertRaises(ValueError, lambda: self.sp1d.diagonal())
+    self.assertRaises(ValueError, lambda: self.sp2d.diagonal(0,1,1))
+
+  @unittest.expectedFailure
+  def test_offset_diagonal(self):
+    for k in [1, -1, 2, -2]:
+      assert_array_equal(dense2d.diagonal(offset=k),
+                         self.sp2d.diagonal(offset=k).toarray())
 
   @unittest.expectedFailure
   def test_slicing(self):
@@ -56,6 +63,15 @@ class TestIndexing(BaseSpArrayTest):
     ii = np.array([1,3])[:,None]
     jj = np.array([0,2])
     assert_array_equal(dense2d[ii,jj], self.sp2d[ii,jj].toarray())
+
+  @unittest.expectedFailure
+  def test_1d_boolean(self):
+    idx = np.random.randint(2, size=dense1d.shape).astype(bool)
+    assert_array_equal(dense1d[idx], self.sp1d[idx])
+    idx = np.random.randint(2, size=dense2d.shape[0]).astype(bool)
+    assert_array_equal(dense2d[idx], self.sp2d[idx])
+    idx = np.random.randint(2, size=dense2d.shape[1]).astype(bool)
+    assert_array_equal(dense2d[:,idx], self.sp2d[:,idx])
 
 
 if __name__ == '__main__':
