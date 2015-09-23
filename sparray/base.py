@@ -12,18 +12,22 @@ class SpArray(object):
   '''Simple sparse ndarray-like, similar to scipy.sparse matrices.
   Defined by three member variables:
     self.data : array of nonzero values (may include zeros)
-    self.indices : int64 array of nonzero flat indices
+    self.indices : sorted int64 array of nonzero flat indices
     self.shape : tuple of integers, ala ndarray shape
   '''
   __array_priority__ = 999
 
-  def __init__(self, indices, data, shape=None):
+  def __init__(self, indices, data, shape=None, is_canonical=False):
     indices = np.array(indices, dtype=int, copy=False).ravel()
     data = np.array(data, copy=False).ravel()
     assert len(indices) == len(data), '# inds (%d) != # data (%d)' % (
         len(indices), len(data))
+    if not is_canonical:
+      # sort and sum duplicates, but allow explicit zeros
+      indices, inv_ind = np.unique(indices, return_inverse=True)
+      data = np.bincount(inv_ind, weights=data).astype(data.dtype, copy=False)
     if shape is None:
-      self.shape = (indices.max()+1,)
+      self.shape = (indices[-1]+1,)
     else:
       self.shape = shape
       assert np.prod(shape) >= len(data)
@@ -36,7 +40,7 @@ class SpArray(object):
     arr = np.array(arr, copy=False)
     mask = arr.flat != 0
     idx, = np.nonzero(mask)
-    return SpArray(idx, arr.flat[mask], shape=arr.shape)
+    return SpArray(idx, arr.flat[mask], shape=arr.shape, is_canonical=True)
 
   @staticmethod
   def from_spmatrix(mat):
@@ -130,7 +134,7 @@ class SpArray(object):
       assert sum(d == -1 for d in new_shape) == 1, 'Only one -1 allowed'
       new_shape = list(new_shape)
       new_shape[idx] = np.prod(self.shape) // -np.prod(new_shape)
-    return SpArray(self.indices, self.data, shape=new_shape)
+    return SpArray(self.indices, self.data, shape=new_shape, is_canonical=True)
 
   def resize(self, new_shape):
     assert np.prod(new_shape) >= len(self.data)
@@ -138,7 +142,7 @@ class SpArray(object):
 
   def ravel(self):
     n = int(np.prod(self.shape))
-    return SpArray(self.indices, self.data, shape=(n,))
+    return SpArray(self.indices, self.data, shape=(n,), is_canonical=True)
 
   def __iter__(self):
     for i in range(self.shape[0]):
@@ -209,7 +213,7 @@ class SpArray(object):
     inv_mask = np.in1d(flat_idx, self.indices[mask], assume_unique=True)
     new_indices, = inv_mask.nonzero()
     new_data = self.data[mask]
-    return SpArray(new_indices, new_data, shape)
+    return SpArray(new_indices, new_data, shape, is_canonical=True)
 
   def __getitem__(self, indices):
     indices = self._prepare_indices(indices)
@@ -221,10 +225,10 @@ class SpArray(object):
     # simple case: all indices are simple int indexes
     if all(isinstance(idx, numbers.Integral) for idx in indices):
       flat_idx = np.ravel_multi_index(indices, self.shape)
-      # TODO: when indices are sorted, use searchsorted here
-      if flat_idx not in self.indices:
+      i = np.searchsorted(self.indices, flat_idx)
+      if i >= len(self.indices) or self.indices[i] != flat_idx:
         return 0
-      return self.data[np.argmax(self.indices == flat_idx)]
+      return self.data[i]
 
     # non-fancy case: all indices are slices or integers
     if not any(hasattr(idx, 'shape') for idx in indices):
@@ -239,8 +243,10 @@ class SpArray(object):
 
   def _pairwise_sparray(self, other, ufunc):
     '''Helper function for the pattern: ufunc(sparse, sparse) -> sparse
-    other : SpArray
+    other : SpArray with the same shape
+    ufunc : vectorized binary function
     '''
+    # TODO: take advantage of sorted order (union1d doesn't)
     idx = np.union1d(self.indices, other.indices)
     dtype = np.promote_types(self.dtype, other.dtype)
     data = np.zeros(len(idx), dtype=dtype)
@@ -249,7 +255,19 @@ class SpArray(object):
       lhs = self.data[self.indices==ix].sum()
       rhs = other.data[other.indices==ix].sum()
       data[i] = ufunc(lhs, rhs)
-    return SpArray(idx, data, self.shape)
+    return SpArray(idx, data, self.shape, is_canonical=True)
+
+  def _pairwise_sparray_fixed_zero(self, other, ufunc):
+    '''Helper function for the pattern: ufunc(sparse, sparse) -> sparse
+    other : SpArray with the same shape
+    ufunc : vectorized binary function, where ufunc(x, 0) -> 0
+    '''
+    # TODO: take advantage of sorted order (intersect1d doesn't)
+    idx = np.intersect1d(self.indices, other.indices, assume_unique=True)
+    lhs = self.data[np.searchsorted(self.indices, idx)]
+    rhs = other.data[np.searchsorted(other.indices, idx)]
+    data = ufunc(lhs, rhs)
+    return SpArray(idx, data, self.shape, is_canonical=True)
 
   def _pairwise_dense2dense(self, other, ufunc):
     '''Helper function for the pattern: ufunc(dense, sparse) -> dense
@@ -323,7 +341,7 @@ class SpArray(object):
     lhs, rhs = self._handle_broadcasting(other)
     assert isinstance(lhs, SpArray)
     if isinstance(rhs, SpArray):
-      return lhs._pairwise_sparray(rhs, np.multiply)
+      return lhs._pairwise_sparray_fixed_zero(rhs, np.multiply)
     # dense * sparse -> sparse
     return lhs._pairwise_dense2sparse(rhs, np.multiply)
 
@@ -418,7 +436,7 @@ class SpArray(object):
     return self._with_data(self.data ** exponent)
 
   def _with_data(self, data):
-    return SpArray(self.indices.copy(), data, self.shape)
+    return SpArray(self.indices.copy(), data, self.shape, is_canonical=True)
 
   def minimum(self, other):
     if np.isscalar(other) and other >= 0:
@@ -461,7 +479,7 @@ class SpArray(object):
     #    new_data[data_idx] += self.data
     # here, because the fancy index doesn't return a proper view.
     new_data = np.bincount(data_idx, self.data.astype(dtype, copy=False))
-    return SpArray(new_idx, new_data, shape=new_shape)
+    return SpArray(new_idx, new_data, shape=new_shape, is_canonical=True)
 
   def mean(self, axis=None, dtype=None):
     if dtype is None:
