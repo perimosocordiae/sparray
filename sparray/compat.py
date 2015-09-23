@@ -42,8 +42,8 @@ else:
 
 try:
   import pyximport
-  pyximport.install()
-  from _bench import intersect1d_sorted
+  pyximport.install(setup_args={'include_dirs': np.get_include()})
+  from _merge import intersect1d_sorted
 except ImportError:
 
   def intersect1d_sorted(a, b, return_inds=False):
