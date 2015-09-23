@@ -4,7 +4,8 @@ import numpy as np
 import scipy.sparse as ss
 
 from .compat import (
-    broadcast_to, broadcast_shapes, ufuncs_with_fixed_point_at_zero
+    broadcast_to, broadcast_shapes, ufuncs_with_fixed_point_at_zero,
+    intersect1d_sorted
 )
 
 
@@ -208,10 +209,9 @@ class SpArray(object):
       assert len(set(shape)) == 1
       shape = (shape[0],)
     flat_idx = np.ravel_multi_index(indices, self.shape)
-    # TODO: replace intersect1d with some kind of merge
-    common_inds = np.intersect1d(self.indices, flat_idx, assume_unique=True)
-    new_indices = np.searchsorted(flat_idx, common_inds)
-    new_data = self.data[np.searchsorted(self.indices, common_inds)]
+    _, data_inds, new_indices = intersect1d_sorted(self.indices, flat_idx,
+                                                   return_inds=True)
+    new_data = self.data[data_inds]
     return SpArray(new_indices, new_data, shape, is_canonical=True)
 
   def __getitem__(self, indices):
