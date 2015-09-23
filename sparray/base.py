@@ -208,11 +208,10 @@ class SpArray(object):
       assert len(set(shape)) == 1
       shape = (shape[0],)
     flat_idx = np.ravel_multi_index(indices, self.shape)
-    # TODO: when indices are sorted, use searchsorted here
-    mask = np.in1d(self.indices, flat_idx, assume_unique=True)
-    inv_mask = np.in1d(flat_idx, self.indices[mask], assume_unique=True)
-    new_indices, = inv_mask.nonzero()
-    new_data = self.data[mask]
+    # TODO: replace intersect1d with some kind of merge
+    common_inds = np.intersect1d(self.indices, flat_idx, assume_unique=True)
+    new_indices = np.searchsorted(flat_idx, common_inds)
+    new_data = self.data[np.searchsorted(self.indices, common_inds)]
     return SpArray(new_indices, new_data, shape, is_canonical=True)
 
   def __getitem__(self, indices):
@@ -246,16 +245,21 @@ class SpArray(object):
     other : SpArray with the same shape
     ufunc : vectorized binary function
     '''
-    # TODO: take advantage of sorted order (union1d doesn't)
-    idx = np.union1d(self.indices, other.indices)
-    dtype = np.promote_types(self.dtype, other.dtype)
-    data = np.zeros(len(idx), dtype=dtype)
-    # TODO: keep indices sorted to make this much faster
-    for i, ix in enumerate(idx):
-      lhs = self.data[self.indices==ix].sum()
-      rhs = other.data[other.indices==ix].sum()
-      data[i] = ufunc(lhs, rhs)
-    return SpArray(idx, data, self.shape, is_canonical=True)
+    # TODO: take advantage of sorted order better
+    lhs_only = np.in1d(self.indices, other.indices,
+                       assume_unique=True, invert=True)
+    rhs_only = np.in1d(other.indices, self.indices,
+                       assume_unique=True, invert=True)
+    lhs_common = ~lhs_only
+    # TODO: replace the concat + sort with a merge
+    idx = np.concatenate((self.indices[lhs_only],
+                          other.indices[rhs_only],
+                          self.indices[lhs_common]))
+    data = np.concatenate((ufunc(self.data[lhs_only], 0),
+                           ufunc(0, other.data[rhs_only]),
+                           ufunc(self.data[lhs_common], other.data[~rhs_only])))
+    order = np.argsort(idx)
+    return SpArray(idx[order], data[order], self.shape, is_canonical=True)
 
   def _pairwise_sparray_fixed_zero(self, other, ufunc):
     '''Helper function for the pattern: ufunc(sparse, sparse) -> sparse
