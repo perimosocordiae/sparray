@@ -30,16 +30,16 @@ def format_time(usec):
 
 def main():
   arr = ss.rand(1000, 500, density=0.1)
-  fmts = ['csr', 'coo', 'csc', 'dense', 'SpArray']
-  arrays = [arr.tocsr(), arr.tocoo(), arr.tocsc(), arr.toarray(),
+  fmts = ['csr', 'csc', 'coo', 'dense', 'SpArray']
+  arrays = [arr.tocsr(), arr.tocsc(), arr.tocoo(), arr.toarray(),
             SpArray.from_spmatrix(arr)]
   benches = [
       ('arr * 3', lambda a: a * 3),
-      ('arr[876]', lambda a: a[876]),
       ('arr.sum()', lambda a: a.sum()),
-      ('arr[:,273]', lambda a: a[:,273]),
-      ('arr[:5,:5]', lambda a: a[:5,:5]),
       ('arr[154,145]', lambda a: a[154,145]),
+      ('arr[:5,:5]', lambda a: a[:5,:5]),
+      ('arr[876]', lambda a: a[876]),
+      ('arr[:,273]', lambda a: a[:,273]),
   ]
 
   label_size = max(len(b[0]) for b in benches)
