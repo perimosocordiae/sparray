@@ -51,8 +51,8 @@ class TestMath(BaseSpArrayTest):
     self._same_op(lambda x: x + b, assert_sparse_equal)
     self._same_op(lambda x: b + x, assert_sparse_equal)
     b = 1
-    self.assertRaises(NotImplementedError, lambda: self.sp2d + b)
-    self.assertRaises(NotImplementedError, lambda: b + self.sp2d)
+    self._same_op(lambda x: x + b, assert_array_equal)
+    self._same_op(lambda x: b + x, assert_array_equal)
 
   def test_add_inplace(self):
     self.sp2d += 0

@@ -2,6 +2,7 @@ from __future__ import absolute_import
 import numbers
 import numpy as np
 import scipy.sparse as ss
+import warnings
 
 from .compat import (
     broadcast_to, broadcast_shapes, ufuncs_with_fixed_point_at_zero,
@@ -307,8 +308,9 @@ class SpArray(object):
     if np.isscalar(other):
       if other == 0:
         return self.copy()
-      raise NotImplementedError('adding a nonzero scalar to a sparse array '
-                                'is not supported')
+      warnings.warn('SpArray + nonzero scalar densifies',
+                    ss.SparseEfficiencyWarning)
+      return self.toarray() + other
     if ss.issparse(other):
       # np.matrix + np.array always returns np.matrix, so for now we punt
       return self.tocoo() + other
@@ -424,10 +426,12 @@ class SpArray(object):
     return other.dot(self.toarray())
 
   def __pow__(self, exponent):
-    # TODO: Should probably warn when we're losing sparsity
     if exponent == 0:
+      warnings.warn('SpArray ** 0 densifies', ss.SparseEfficiencyWarning)
       return np.ones(self.shape, dtype=self.dtype)
     elif exponent < 0:
+      warnings.warn('SpArray ** negative exponent densifies',
+                    ss.SparseEfficiencyWarning)
       return self.toarray() ** exponent
     return self._with_data(self.data ** exponent)
 
