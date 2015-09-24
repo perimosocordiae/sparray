@@ -241,14 +241,16 @@ class SpArray(object):
     # TODO: implement the harder cases
     raise NotImplementedError('Fancy slicing is still NYI')
 
-  def _pairwise_sparray(self, other, ufunc):
+  def _pairwise_sparray(self, other, ufunc, dtype=None):
     '''Helper function for the pattern: ufunc(sparse, sparse) -> sparse
     other : SpArray with the same shape
     ufunc : vectorized binary function
     '''
+    if dtype is None:
+      dtype = np.promote_types(self.dtype, other.dtype)
     idx, lut, lhs_only, rhs_only = union1d_sorted(self.indices, other.indices,
                                                   return_masks=True)
-    data = np.empty_like(idx, dtype=np.promote_types(self.dtype, other.dtype))
+    data = np.empty_like(idx, dtype=dtype)
     data[lut==0] = ufunc(self.data[lhs_only], 0)
     data[lut==1] = ufunc(0, other.data[rhs_only])
     data[lut==2] = ufunc(self.data[~lhs_only], other.data[~rhs_only])
@@ -303,6 +305,45 @@ class SpArray(object):
   def _broadcast(self, shape):
     # TODO: fix this hack! Need to avoid densifying here.
     return SpArray.from_ndarray(broadcast_to(self.toarray(), shape))
+
+  def __eq__(self, other):
+    if np.isscalar(other) and other != 0:
+      return self._with_data(self.data == other)
+    if ss.issparse(other) or isinstance(other, SpArray):
+      other = other.toarray()
+    warnings.warn('SpArray equality densifies', ss.SparseEfficiencyWarning)
+    return self.toarray() == other
+
+  def _comparison(self, other, method_name, ufunc, op_symbol):
+    if np.isscalar(other):
+      if not ufunc(0, other):
+        return self._with_data(ufunc(self.data, other))
+      kind = 'nonzero scalar' if other != 0 else '0'
+      warnings.warn('SpArray %s %s densifies' % (op_symbol, kind),
+                    ss.SparseEfficiencyWarning)
+      return ufunc(self.toarray(), other)
+    if ss.issparse(other):
+      return getattr(self.tocoo(), method_name)(other)  # punt
+    lhs, rhs = self._handle_broadcasting(other)
+    assert isinstance(lhs, SpArray)
+    if isinstance(rhs, SpArray):
+      return lhs._pairwise_sparray(rhs, ufunc, dtype=bool)
+    return ufunc(self.toarray(), other)
+
+  def __ne__(self, other):
+    return self._comparison(other, '__ne__', np.not_equal, '!=')
+
+  def __lt__(self, other):
+    return self._comparison(other, '__lt__', np.less, '<')
+
+  def __le__(self, other):
+    return self._comparison(other, '__le__', np.less_equal, '<=')
+
+  def __gt__(self, other):
+    return self._comparison(other, '__gt__', np.greater, '>')
+
+  def __ge__(self, other):
+    return self._comparison(other, '__ge__', np.greater_equal, '>=')
 
   def __add__(self, other):
     if np.isscalar(other):

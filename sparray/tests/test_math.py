@@ -279,6 +279,61 @@ class TestMath(BaseSpArrayTest):
         method = getattr(self.sp2d, ufunc.__name__)
         assert_array_equal(ufunc(dense2d), method().toarray())
 
+  def test_comparison_scalar(self):
+    # equal
+    self._same_op(lambda x: x == 1, assert_sparse_equal)
+    self._same_op(lambda x: x == 0, assert_array_equal)
+    # not equal
+    self._same_op(lambda x: x != 0, assert_sparse_equal)
+    self._same_op(lambda x: x != 1, assert_array_equal)
+    # less than
+    self._same_op(lambda x: x < -1, assert_sparse_equal)
+    self._same_op(lambda x: x < 1, assert_array_equal)
+    # less equal
+    self._same_op(lambda x: x <= -1, assert_sparse_equal)
+    self._same_op(lambda x: x <= 0, assert_array_equal)
+    # greater than
+    self._same_op(lambda x: x > 1, assert_sparse_equal)
+    self._same_op(lambda x: x > -1, assert_array_equal)
+    # greater equal
+    self._same_op(lambda x: x >= 1, assert_sparse_equal)
+    self._same_op(lambda x: x >= 0, assert_array_equal)
+
+  def test_eq_nonscalar(self):
+    b = np.random.random(dense2d.shape)
+    assert_array_equal(dense2d == b, self.sp2d == b)
+    assert_array_equal(b == dense2d, b == self.sp2d)
+    # Test broadcasting
+    b = np.random.random((dense2d.shape[0], 1))
+    assert_array_equal(dense2d == b, self.sp2d == b)
+    assert_array_equal(b == dense2d, b == self.sp2d)
+    # Test spmatrix
+    for fmt in ('coo', 'csr', 'csc'):
+      b = ss.rand(*sparse2d.shape, density=0.5, format=fmt)
+      assert_sparse_equal(sparse2d == b, self.sp2d == b)
+      # spmatrix doesn't know how to handle us
+      # assert_sparse_equal(b == sparse2d, b == self.sp2d)
+
+  def test_comparison_nonscalar(self):
+    # Only testing < here, because the other ops use the same code.
+    b = np.random.random(dense2d.shape)
+    assert_array_equal(dense2d < b, self.sp2d < b)
+    assert_array_equal(b < dense2d, b < self.sp2d)
+    # Test broadcasting
+    b = np.random.random((dense2d.shape[0], 1))
+    assert_array_equal(dense2d < b, self.sp2d < b)
+    assert_array_equal(b < dense2d, b < self.sp2d)
+    # Test sparray
+    s = ss.rand(*sparse2d.shape, density=0.5)
+    b = SpArray.from_spmatrix(s)
+    assert_array_equal(sparse2d < s, self.sp2d < b)
+    assert_array_equal(s < sparse2d, b < self.sp2d)
+    # Test spmatrix
+    for fmt in ('coo', 'csr', 'csc'):
+      b = ss.rand(*sparse2d.shape, density=0.5, format=fmt)
+      assert_sparse_equal(sparse2d < b, self.sp2d < b)
+      # spmatrix doesn't know how to handle us
+      # assert_sparse_equal(b < sparse2d, b < self.sp2d)
 
 if __name__ == '__main__':
   unittest.main()
