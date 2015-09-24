@@ -1,6 +1,12 @@
 [run]
 branch = true
 
+source = sparray
+
+omit =
+    *.pyx
+    sparray/tests/*.py
+
 [report]
 # Regexes for lines to exclude from consideration
 exclude_lines =

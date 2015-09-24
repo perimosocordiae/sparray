@@ -74,4 +74,3 @@ except ImportError:
     lut = np.in1d(c, b_only) + 2 * np.in1d(c, common)
     a_mask = ~common_mask
     return c, lut, a_mask, b_mask
-

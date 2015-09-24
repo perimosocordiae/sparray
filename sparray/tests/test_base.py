@@ -9,10 +9,10 @@ dense2d = np.array([[0,0,0],[4,5,7],[6,2,0],[1,3,8]], dtype=float) / 2.
 dense2d_indices = [1,3,4,5,6,7,9,10,11]
 dense2d_data = [0,2,2.5,3.5,3,1,0.5,1.5,4]
 
+# Ignore efficiency warnings
+warnings.simplefilter('ignore', ss.SparseEfficiencyWarning)
 sparse2d = ss.csr_matrix(dense2d)
-with warnings.catch_warnings():
-  warnings.simplefilter('ignore')  # Ignore efficiency warning
-  sparse2d[0,1] = 0  # Add the explicit zero to match indices,data
+sparse2d[0,1] = 0  # Add the explicit zero to match indices,data
 
 dense1d = np.arange(5) - 2
 dense1d_indices = [0,1,3,4]
