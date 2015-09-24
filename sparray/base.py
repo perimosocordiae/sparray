@@ -5,7 +5,7 @@ import scipy.sparse as ss
 
 from .compat import (
     broadcast_to, broadcast_shapes, ufuncs_with_fixed_point_at_zero,
-    intersect1d_sorted
+    intersect1d_sorted, union1d_sorted
 )
 
 
@@ -245,21 +245,13 @@ class SpArray(object):
     other : SpArray with the same shape
     ufunc : vectorized binary function
     '''
-    # TODO: take advantage of sorted order better
-    lhs_only = np.in1d(self.indices, other.indices,
-                       assume_unique=True, invert=True)
-    rhs_only = np.in1d(other.indices, self.indices,
-                       assume_unique=True, invert=True)
-    lhs_common = ~lhs_only
-    # TODO: replace the concat + sort with a merge
-    idx = np.concatenate((self.indices[lhs_only],
-                          other.indices[rhs_only],
-                          self.indices[lhs_common]))
-    data = np.concatenate((ufunc(self.data[lhs_only], 0),
-                           ufunc(0, other.data[rhs_only]),
-                           ufunc(self.data[lhs_common], other.data[~rhs_only])))
-    order = np.argsort(idx)
-    return SpArray(idx[order], data[order], self.shape, is_canonical=True)
+    idx, lut, lhs_only, rhs_only = union1d_sorted(self.indices, other.indices,
+                                                  return_masks=True)
+    data = np.empty_like(idx, dtype=np.promote_types(self.dtype, other.dtype))
+    data[lut==0] = ufunc(self.data[lhs_only], 0)
+    data[lut==1] = ufunc(0, other.data[rhs_only])
+    data[lut==2] = ufunc(self.data[~lhs_only], other.data[~rhs_only])
+    return SpArray(idx, data, self.shape, is_canonical=True)
 
   def _pairwise_sparray_fixed_zero(self, other, ufunc):
     '''Helper function for the pattern: ufunc(sparse, sparse) -> sparse

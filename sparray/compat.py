@@ -43,11 +43,11 @@ else:
 try:
   import pyximport
   pyximport.install(setup_args={'include_dirs': np.get_include()})
-  from _merge import intersect1d_sorted
+  from _merge import intersect1d_sorted, union1d_sorted
 except ImportError:
 
   def intersect1d_sorted(a, b, return_inds=False):
-    # current technique adapted from http://stackoverflow.com/a/12427633/10601
+    # technique adapted from http://stackoverflow.com/a/12427633/10601
     c = np.concatenate((a, b))
     c.sort(kind='mergesort')
     mask = np.zeros(len(c), dtype=bool)
@@ -58,3 +58,20 @@ except ImportError:
     a_inds = np.searchsorted(a, c)
     b_inds = np.searchsorted(b, c)
     return c, a_inds, b_inds
+
+  def union1d_sorted(a, b, return_masks=False):
+    common_mask = np.in1d(a, b, assume_unique=True)
+    common = a[common_mask]
+    b_mask = np.in1d(b, common, assume_unique=True, invert=True)
+    b_only = b[b_mask]
+    c = np.concatenate((a, b_only))
+    c.sort(kind='mergesort')
+    mask = np.ones(len(c), dtype=bool)
+    np.not_equal(c[1:], c[:-1], out=mask[1:])
+    c = c[mask]
+    if not return_masks:
+      return c
+    lut = np.in1d(c, b_only) + 2 * np.in1d(c, common)
+    a_mask = ~common_mask
+    return c, lut, a_mask, b_mask
+
