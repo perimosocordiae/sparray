@@ -258,10 +258,10 @@ class SpArray(object):
     other : SpArray with the same shape
     ufunc : vectorized binary function, where ufunc(x, 0) -> 0
     '''
-    # TODO: take advantage of sorted order (intersect1d doesn't)
-    idx = np.intersect1d(self.indices, other.indices, assume_unique=True)
-    lhs = self.data[np.searchsorted(self.indices, idx)]
-    rhs = other.data[np.searchsorted(other.indices, idx)]
+    idx, lhs_inds, rhs_inds = intersect1d_sorted(self.indices, other.indices,
+                                                 return_inds=True)
+    lhs = self.data[lhs_inds]
+    rhs = other.data[rhs_inds]
     data = ufunc(lhs, rhs)
     return SpArray(idx, data, self.shape, is_canonical=True)
 
