@@ -54,15 +54,6 @@ class TestMath(BaseSpArrayTest):
     self._same_op(lambda x: x + b, assert_array_equal)
     self._same_op(lambda x: b + x, assert_array_equal)
 
-  def test_add_inplace(self):
-    self.sp2d += 0
-    assert_array_equal(dense2d, self.sp2d.toarray())
-    # sparray += sparray
-    s = ss.rand(*sparse2d.shape, density=0.5)
-    b = SpArray.from_spmatrix(s)
-    self.sp2d += b
-    assert_array_equal(dense2d + s, self.sp2d.toarray())
-
   def test_sub_ndarray(self):
     b = np.random.random(dense2d.shape)
     assert_array_equal(dense2d - b, self.sp2d - b)

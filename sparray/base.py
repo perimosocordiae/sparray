@@ -116,6 +116,9 @@ class SpArray(object):
     idx = np.arange(min(self.shape))
     return self._slice_multi((idx, idx), inner=True)
 
+  def setdiag(self, values, offset=0):
+    raise NotImplementedError('setdiag() is NYI')
+
   def __repr__(self):
     return '<%s-SpArray of type %s\n\twith %d stored elements>' % (
         self.shape, self.data.dtype, self.getnnz())
@@ -616,20 +619,26 @@ class SpArray(object):
   def __neg__(self):
     return self._with_data(-self.data)
 
+  def __iadd__(self, other):
+    raise NotImplementedError('in-place add is not supported')
+
+  def __isub__(self, other):
+    raise NotImplementedError('in-place subtract is not supported')
+
   def __imul__(self, other):  # self *= other
     if np.isscalar(other):
       self.data *= other
       return self
-    else:
-      return NotImplemented
+    # defer to self = self * other
+    return NotImplemented
 
   def __itruediv__(self, other):  # self /= other
     if np.isscalar(other):
       recip = 1.0 / other
       self.data *= recip
       return self
-    else:
-      return NotImplemented
+    # defer to self = self / other
+    return NotImplemented
 
   def astype(self, t):
     return self._with_data(self.data.astype(t))
