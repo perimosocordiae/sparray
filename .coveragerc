@@ -6,6 +6,8 @@ source = sparray
 omit =
     *.pyx
     sparray/tests/*.py
+    setup.py
+    bench.py
 
 [report]
 # Regexes for lines to exclude from consideration

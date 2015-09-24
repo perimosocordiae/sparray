@@ -326,8 +326,8 @@ class TestMath(BaseSpArrayTest):
     # Test sparray
     s = ss.rand(*sparse2d.shape, density=0.5)
     b = SpArray.from_spmatrix(s)
-    assert_array_equal(sparse2d < s, self.sp2d < b)
-    assert_array_equal(s < sparse2d, b < self.sp2d)
+    assert_sparse_equal(sparse2d < s, self.sp2d < b)
+    assert_sparse_equal(s < sparse2d, b < self.sp2d)
     # Test spmatrix
     for fmt in ('coo', 'csr', 'csc'):
       b = ss.rand(*sparse2d.shape, density=0.5, format=fmt)
