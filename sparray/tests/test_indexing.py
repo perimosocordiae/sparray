@@ -20,9 +20,9 @@ class TestIndexing(BaseSpArrayTest):
   def test_ellipses(self):
     assert_array_equal(dense1d[...], self.sp1d[...].toarray())
     assert_array_equal(dense2d[...], self.sp2d[...].toarray())
-    # two ellipses
-    assert_array_equal(dense1d[...,...], self.sp1d[...,...].toarray())
-    # three ellipses is too many
+    # two ellipses is an error in recent numpy
+    self.assertRaises(IndexError, lambda: self.sp1d[...,...])
+    # three ellipses is too many for any numpy
     self.assertRaises(IndexError, lambda: self.sp1d[...,...,...])
 
   def test_partial_indexing(self):

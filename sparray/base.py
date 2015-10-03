@@ -163,15 +163,17 @@ class SpArray(object):
 
     # check for Ellipsis
     ell_inds = [i for i, idx in enumerate(mut_indices) if idx is Ellipsis]
+    if len(ell_inds) > 1:
+      # According to http://sourceforge.net/p/numpy/mailman/message/12594675/,
+      # only the first Ellipsis is "real", and the rest are just slice(None).
+      # In recent versions of numpy this is disallowed, so we'll take the easy route.
+      raise IndexError("an index can only have a single ellipsis ('...')")
     if ell_inds:
-      # according to http://sourceforge.net/p/numpy/mailman/message/12594675/,
-      # only the first Ellipsis is "real", and the rest are just slice(None)
-      for i in ell_inds[1:]:
-        mut_indices[i] = slice(None)
-      # insert as many colons as we need at the first Ellipsis position
+      # insert as many colons as we need at the Ellipsis position
       ell_pos = ell_inds[0]
       mut_indices[ell_pos:ell_pos+1] = [slice(None)] * (missing_dims+1)
     elif missing_dims > 0:
+      # append colons to fill out any remaining indices
       mut_indices.extend([slice(None)] * missing_dims)
 
     # check for array-like indices
