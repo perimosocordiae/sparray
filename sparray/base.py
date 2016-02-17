@@ -47,9 +47,20 @@ class SpArray(object):
   @staticmethod
   def from_spmatrix(mat):
     '''Converts a scipy.sparse matrix to a SpArray object'''
+    # attempt to canonicalize using scipy.sparse's code
+    try:
+      mat.sum_duplicates()
+    except AttributeError:
+      pass
     mat = mat.tocoo()
     inds = np.ravel_multi_index((mat.row, mat.col), mat.shape)
-    return SpArray(inds, mat.data, shape=mat.shape)
+    if (np.diff(inds) > 0).all():
+      # easy case: indices are pre-sorted
+      return SpArray(inds, mat.data, shape=mat.shape, is_canonical=True)
+    # do the sorting ourselves
+    order = np.argsort(inds)
+    return SpArray(inds[order], mat.data[order], shape=mat.shape,
+                   is_canonical=True)
 
   def toarray(self):
     a = np.zeros(self.shape, dtype=self.data.dtype)
