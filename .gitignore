@@ -1,0 +1,10 @@
+*.pyc
+*.c
+*.so
+htmlcov/
+.coverage
+build/
+dist/
+*.egg-info/
+.eggs/
+.idea/

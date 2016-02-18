@@ -1,0 +1,330 @@
+{
+    "benchmarks": {
+        "construction.Construction2D.time_from_ndarray": {
+            "code": "def time_from_ndarray(self):\n  SpArray.from_ndarray(self.arr)\n", 
+            "goal_time": 2.0, 
+            "name": "construction.Construction2D.time_from_ndarray", 
+            "number": 0, 
+            "param_names": [], 
+            "params": [], 
+            "repeat": 0, 
+            "timeout": 60.0, 
+            "type": "time", 
+            "unit": "seconds"
+        }, 
+        "construction.Construction2D.time_from_spmatrix_coo": {
+            "code": "def time_from_spmatrix_coo(self):\n  SpArray.from_spmatrix(self.spm)\n", 
+            "goal_time": 2.0, 
+            "name": "construction.Construction2D.time_from_spmatrix_coo", 
+            "number": 0, 
+            "param_names": [], 
+            "params": [], 
+            "repeat": 0, 
+            "timeout": 60.0, 
+            "type": "time", 
+            "unit": "seconds"
+        }, 
+        "construction.Construction2D.time_from_spmatrix_csr": {
+            "code": "def time_from_spmatrix_csr(self):\n  SpArray.from_spmatrix(self.spm_csr)\n", 
+            "goal_time": 2.0, 
+            "name": "construction.Construction2D.time_from_spmatrix_csr", 
+            "number": 0, 
+            "param_names": [], 
+            "params": [], 
+            "repeat": 0, 
+            "timeout": 60.0, 
+            "type": "time", 
+            "unit": "seconds"
+        }, 
+        "construction.Construction2D.time_init": {
+            "code": "def time_init(self):\n  SpArray(self.indices, self.data, shape=self.arr.shape)\n", 
+            "goal_time": 2.0, 
+            "name": "construction.Construction2D.time_init", 
+            "number": 0, 
+            "param_names": [], 
+            "params": [], 
+            "repeat": 0, 
+            "timeout": 60.0, 
+            "type": "time", 
+            "unit": "seconds"
+        }, 
+        "construction.ConstructionND.time_canonical_init": {
+            "code": "def time_canonical_init(self, shape):\n  SpArray(self.sorted_indices, self.data, shape=shape, is_canonical=True)\n", 
+            "goal_time": 2.0, 
+            "name": "construction.ConstructionND.time_canonical_init", 
+            "number": 0, 
+            "param_names": [
+                "shape"
+            ], 
+            "params": [
+                [
+                    "(1200000,)", 
+                    "(1200, 1000)", 
+                    "(120, 100, 100)", 
+                    "(20, 30, 40, 50)"
+                ]
+            ], 
+            "repeat": 0, 
+            "timeout": 60.0, 
+            "type": "time", 
+            "unit": "seconds"
+        }, 
+        "construction.ConstructionND.time_from_ndarray": {
+            "code": "def time_from_ndarray(self, shape):\n  SpArray.from_ndarray(self.arr)\n", 
+            "goal_time": 2.0, 
+            "name": "construction.ConstructionND.time_from_ndarray", 
+            "number": 0, 
+            "param_names": [
+                "shape"
+            ], 
+            "params": [
+                [
+                    "(1200000,)", 
+                    "(1200, 1000)", 
+                    "(120, 100, 100)", 
+                    "(20, 30, 40, 50)"
+                ]
+            ], 
+            "repeat": 0, 
+            "timeout": 60.0, 
+            "type": "time", 
+            "unit": "seconds"
+        }, 
+        "construction.ConstructionND.time_init": {
+            "code": "def time_init(self, shape):\n  SpArray(self.indices, self.data, shape=shape)\n", 
+            "goal_time": 2.0, 
+            "name": "construction.ConstructionND.time_init", 
+            "number": 0, 
+            "param_names": [
+                "shape"
+            ], 
+            "params": [
+                [
+                    "(1200000,)", 
+                    "(1200, 1000)", 
+                    "(120, 100, 100)", 
+                    "(20, 30, 40, 50)"
+                ]
+            ], 
+            "repeat": 0, 
+            "timeout": 60.0, 
+            "type": "time", 
+            "unit": "seconds"
+        }, 
+        "ops.Operations.time_diagonal": {
+            "code": "def time_diagonal(self, arr_type):\n  self.arr.diagonal()\n", 
+            "goal_time": 2.0, 
+            "name": "ops.Operations.time_diagonal", 
+            "number": 0, 
+            "param_names": [
+                "arr_type"
+            ], 
+            "params": [
+                [
+                    "'SpArray'", 
+                    "'csr_matrix'"
+                ]
+            ], 
+            "repeat": 0, 
+            "timeout": 60.0, 
+            "type": "time", 
+            "unit": "seconds"
+        }, 
+        "ops.Operations.time_getitem_col": {
+            "code": "def time_getitem_col(self, arr_type):\n  self.arr[:,273]\n", 
+            "goal_time": 2.0, 
+            "name": "ops.Operations.time_getitem_col", 
+            "number": 0, 
+            "param_names": [
+                "arr_type"
+            ], 
+            "params": [
+                [
+                    "'SpArray'", 
+                    "'csr_matrix'"
+                ]
+            ], 
+            "repeat": 0, 
+            "timeout": 60.0, 
+            "type": "time", 
+            "unit": "seconds"
+        }, 
+        "ops.Operations.time_getitem_row": {
+            "code": "def time_getitem_row(self, arr_type):\n  self.arr[876]\n", 
+            "goal_time": 2.0, 
+            "name": "ops.Operations.time_getitem_row", 
+            "number": 0, 
+            "param_names": [
+                "arr_type"
+            ], 
+            "params": [
+                [
+                    "'SpArray'", 
+                    "'csr_matrix'"
+                ]
+            ], 
+            "repeat": 0, 
+            "timeout": 60.0, 
+            "type": "time", 
+            "unit": "seconds"
+        }, 
+        "ops.Operations.time_getitem_scalar": {
+            "code": "def time_getitem_scalar(self, arr_type):\n  self.arr[154, 145]\n", 
+            "goal_time": 2.0, 
+            "name": "ops.Operations.time_getitem_scalar", 
+            "number": 0, 
+            "param_names": [
+                "arr_type"
+            ], 
+            "params": [
+                [
+                    "'SpArray'", 
+                    "'csr_matrix'"
+                ]
+            ], 
+            "repeat": 0, 
+            "timeout": 60.0, 
+            "type": "time", 
+            "unit": "seconds"
+        }, 
+        "ops.Operations.time_getitem_subarray": {
+            "code": "def time_getitem_subarray(self, arr_type):\n  self.arr[:5, :5]\n", 
+            "goal_time": 2.0, 
+            "name": "ops.Operations.time_getitem_subarray", 
+            "number": 0, 
+            "param_names": [
+                "arr_type"
+            ], 
+            "params": [
+                [
+                    "'SpArray'", 
+                    "'csr_matrix'"
+                ]
+            ], 
+            "repeat": 0, 
+            "timeout": 60.0, 
+            "type": "time", 
+            "unit": "seconds"
+        }, 
+        "ops.Operations.time_scalar_multiplication": {
+            "code": "def time_scalar_multiplication(self, arr_type):\n  self.arr * 3\n", 
+            "goal_time": 2.0, 
+            "name": "ops.Operations.time_scalar_multiplication", 
+            "number": 0, 
+            "param_names": [
+                "arr_type"
+            ], 
+            "params": [
+                [
+                    "'SpArray'", 
+                    "'csr_matrix'"
+                ]
+            ], 
+            "repeat": 0, 
+            "timeout": 60.0, 
+            "type": "time", 
+            "unit": "seconds"
+        }, 
+        "ops.Operations.time_sum": {
+            "code": "def time_sum(self, arr_type):\n  self.arr.sum()\n", 
+            "goal_time": 2.0, 
+            "name": "ops.Operations.time_sum", 
+            "number": 0, 
+            "param_names": [
+                "arr_type"
+            ], 
+            "params": [
+                [
+                    "'SpArray'", 
+                    "'csr_matrix'"
+                ]
+            ], 
+            "repeat": 0, 
+            "timeout": 60.0, 
+            "type": "time", 
+            "unit": "seconds"
+        }
+    }, 
+    "date_to_hash": {
+        "1442612107000": "d7d73931", 
+        "1442614712000": "ef05a2cc", 
+        "1442616998000": "8470dbac", 
+        "1442617014000": "66f42ebc", 
+        "1442947649000": "df824728", 
+        "1442950979000": "6586451e", 
+        "1442955923000": "561ee56c", 
+        "1442960613000": "37f9ebfa", 
+        "1443032353000": "5a11ca55", 
+        "1443039369000": "53630998", 
+        "1443041813000": "4413bb53", 
+        "1443045816000": "52a1c96e", 
+        "1443046549000": "2778702f", 
+        "1443053316000": "61d8fc9e", 
+        "1443053546000": "1c32a307", 
+        "1443122038000": "ab713616", 
+        "1443122079000": "0e15b73b", 
+        "1443124961000": "d69511f4", 
+        "1443126633000": "0d3bf609", 
+        "1443126656000": "8e52e64a", 
+        "1443126909000": "04684778", 
+        "1443127473000": "7d639faa", 
+        "1443902203000": "589efae2", 
+        "1455740728000": "112ea890", 
+        "1455740813000": "5174fc37", 
+        "1455743035000": "00efee70", 
+        "1455744250000": "4fa2346d", 
+        "1455744510000": "685a6830", 
+        "1455823401000": "04ab7532", 
+        "1455825238000": "1a02110a", 
+        "1455827106000": "a70b8ab6", 
+        "1455828630000": "91b52891"
+    }, 
+    "machines": {
+        "bregman": {
+            "arch": "x86_64", 
+            "cpu": "Intel(R) Core(TM) i7 CPU       X 990  @ 3.47GHz", 
+            "machine": "bregman", 
+            "os": "Linux 4.2.0-25-generic", 
+            "ram": "24679200", 
+            "version": 1
+        }
+    }, 
+    "params": {
+        "Cython": [
+            "0.23.4"
+        ], 
+        "arch": [
+            "x86_64"
+        ], 
+        "branch": [
+            "master"
+        ], 
+        "cpu": [
+            "Intel(R) Core(TM) i7 CPU       X 990  @ 3.47GHz"
+        ], 
+        "machine": [
+            "bregman"
+        ], 
+        "numpy": [
+            "1.10.4"
+        ], 
+        "os": [
+            "Linux 4.2.0-25-generic"
+        ], 
+        "python": [
+            "2.7"
+        ], 
+        "ram": [
+            "24679200"
+        ], 
+        "scipy": [
+            "0.17"
+        ]
+    }, 
+    "project": "sparray", 
+    "project_url": "https://github.com/perimosocordiae/sparray/", 
+    "show_commit_url": "http://github.com/perimosocordiae/sparray/commit/", 
+    "tags": {
+        "asv-start": 1442612107000
+    }
+}
