@@ -19,7 +19,7 @@ Requires recent versions of:
 
   * numpy
   * scipy
-  * Cython
+  * Cython (optional)
 
 Testing requires:
 
