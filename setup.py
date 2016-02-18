@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from setuptools import setup
+from setuptools import setup, Extension
 
 try:
   from Cython.Build import cythonize
@@ -11,7 +11,7 @@ else:
 
 setup_kwargs = dict(
     name='sparray',
-    version='0.0.2',
+    version='0.0.3',
     author='CJ Carey',
     author_email='perimosocordiae@gmail.com',
     description='Sparse representation for ndarrays',
@@ -26,7 +26,7 @@ setup_kwargs = dict(
     ],
 )
 if use_cython:
-  setup_kwargs['include_dirs'] = [np.get_include()]
-  setup_kwargs['ext_modules'] = cythonize('sparray/*.pyx')
+  exts = [Extension('*', ['sparray/*.pyx'], include_dirs=[np.get_include()])]
+  setup_kwargs['ext_modules'] = cythonize(exts)
 
 setup(**setup_kwargs)
