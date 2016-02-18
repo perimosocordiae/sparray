@@ -9,12 +9,9 @@ A library for sparse array manipulation in Python.
 
   * Resolve API holes (`__setitem__`, fancy indexing, etc)
   * Add support for multiple backends (transparent, opaque)
-  * Supplement hotspots with fast (cython) implementations
   * Add docstrings to all public functions/classes/modules
   * Generate sphinx docs
   * Provide usage examples (here and in the docs)
-  * Replace pyximport with distutils for cython code
-  * Upload to PyPI
 
 ## Requirements
 

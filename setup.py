@@ -4,7 +4,7 @@ from Cython.Build import cythonize
 
 setup(
     name='sparray',
-    version='0.0.1',
+    version='0.0.2',
     author='CJ Carey',
     author_email='perimosocordiae@gmail.com',
     description='Sparse representation for ndarrays',
