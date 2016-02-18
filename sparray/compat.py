@@ -6,21 +6,19 @@ __all__ = [
     'intersect1d_sorted', 'union1d_sorted'
 ]
 
-if hasattr(np, 'broadcast_to'):
-  broadcast_to = np.broadcast_to
-else:
-  def broadcast_to(array, shape, subok=False):
-    '''copied in reduced form from numpy 1.10'''
-    shape = tuple(shape)
-    array = np.array(array, copy=False, subok=subok)
-    broadcast = np.nditer((array,), flags=['multi_index', 'zerosize_ok'],
-                          op_flags=['readonly'], itershape=shape, order='C'
-                          ).itviews[0]
-    if type(array) is not type(broadcast):
-      broadcast = broadcast.view(type=type(array))
-      if broadcast.__array_finalize__:
-        broadcast.__array_finalize__(array)
-    return broadcast
+
+def _broadcast_to(array, shape, subok=False):
+  '''copied in reduced form from numpy 1.10'''
+  shape = tuple(shape)
+  array = np.array(array, copy=False, subok=subok)
+  broadcast = np.nditer((array,), flags=['multi_index', 'zerosize_ok'],
+                        op_flags=['readonly'], itershape=shape, order='C'
+                        ).itviews[0]
+  if type(array) is not type(broadcast):
+    broadcast = broadcast.view(type=type(array))
+    if broadcast.__array_finalize__:
+      broadcast.__array_finalize__(array)
+  return broadcast
 
 
 # Re-create np.broadcast rules, but for shapes instead of array-likes
@@ -29,15 +27,6 @@ def broadcast_shapes(*shapes):
   x = np.array(0)
   fake_arrays = [broadcast_to(x, s) for s in shapes]
   return np.broadcast(*fake_arrays).shape
-
-
-if hasattr(ss.base, '_ufuncs_with_fixed_point_at_zero'):
-  ufuncs_with_fixed_point_at_zero = ss.base._ufuncs_with_fixed_point_at_zero
-else:
-  ufuncs_with_fixed_point_at_zero = frozenset((
-      np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh, np.arcsinh,
-      np.arctanh, np.rint, np.sign, np.expm1, np.log1p, np.deg2rad, np.rad2deg,
-      np.floor, np.ceil, np.trunc, np.sqrt))
 
 
 def _intersect1d_sorted(a, b, return_inds=False):
@@ -55,6 +44,8 @@ def _intersect1d_sorted(a, b, return_inds=False):
 
 
 def _union1d_sorted(a, b, return_masks=False):
+  a = np.asanyarray(a)
+  b = np.asanyarray(b)
   common_mask = np.in1d(a, b, assume_unique=True)
   common = a[common_mask]
   b_mask = np.in1d(b, common, assume_unique=True, invert=True)
@@ -71,7 +62,22 @@ def _union1d_sorted(a, b, return_masks=False):
   return c, lut, a_mask, b_mask
 
 
-try:
+# Apply the shims where necessary
+
+if hasattr(np, 'broadcast_to'):  # pragma: no cover
+  broadcast_to = np.broadcast_to
+else:  # pragma: no cover
+  broadcast_to = _broadcast_to
+
+if hasattr(ss.base, '_ufuncs_with_fixed_point_at_zero'):  # pragma: no cover
+  ufuncs_with_fixed_point_at_zero = ss.base._ufuncs_with_fixed_point_at_zero
+else:  # pragma: no cover
+  ufuncs_with_fixed_point_at_zero = frozenset((
+      np.sin, np.tan, np.arcsin, np.arctan, np.sinh, np.tanh, np.arcsinh,
+      np.arctanh, np.rint, np.sign, np.expm1, np.log1p, np.deg2rad, np.rad2deg,
+      np.floor, np.ceil, np.trunc, np.sqrt))
+
+try:  # pragma: no cover
   # use pre-compiled _merge.so library
   from _merge import intersect1d_sorted, union1d_sorted
 except ImportError:
@@ -84,4 +90,3 @@ except ImportError:
     # fall back to pure-Python versions
     intersect1d_sorted = _intersect1d_sorted
     union1d_sorted = _union1d_sorted
-
