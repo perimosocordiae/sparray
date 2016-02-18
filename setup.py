@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-
 from setuptools import setup
+from Cython.Build import cythonize
 
 setup(
     name='sparray',
@@ -14,5 +14,7 @@ setup(
     install_requires=[
         'numpy >= 1.9',
         'scipy >= 0.15',
+        'Cython >= 0.21',
     ],
+    ext_modules=cythonize('sparray/*.pyx'),
 )

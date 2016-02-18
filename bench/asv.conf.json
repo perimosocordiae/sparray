@@ -44,7 +44,8 @@
     // version.
     "matrix": {
         "numpy": ["1.10.4"],
-        "scipy": ["0.17"]
+        "scipy": ["0.17"],
+        "Cython": ["0.23.4"]
     },
 
     // The directory (relative to the current directory) that benchmarks are

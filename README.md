@@ -22,7 +22,7 @@ Requires recent versions of:
 
   * numpy
   * scipy
-  * Cython (optional)
+  * Cython
 
 Testing requires:
 
