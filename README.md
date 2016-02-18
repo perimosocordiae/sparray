@@ -1,5 +1,6 @@
 # SpArray
 
+[![PyPI version](https://badge.fury.io/py/sparray.svg)](http://badge.fury.io/py/sparray)
 [![Build Status](https://travis-ci.org/perimosocordiae/sparray.svg?branch=master)](https://travis-ci.org/perimosocordiae/sparray)
 [![Coverage Status](https://coveralls.io/repos/perimosocordiae/sparray/badge.svg?branch=master&service=github)](https://coveralls.io/github/perimosocordiae/sparray?branch=master)
 
