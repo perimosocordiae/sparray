@@ -1,4 +1,5 @@
+*.pyc
 sparray
+results
 html
 env
-results
