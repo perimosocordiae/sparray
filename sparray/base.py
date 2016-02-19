@@ -247,10 +247,24 @@ class SpArray(object):
     '''
     shape = tuple(len(idx) for idx in indices
                   if not isinstance(idx, numbers.Integral))
+    # easy when there's a zero dimension
+    if any(s == 0 for s in shape):
+      return SpArray([], [], shape, is_canonical=True)
+
     if inner:
       assert len(set(shape)) == 1
       shape = (shape[0],)
-    flat_idx = np.ravel_multi_index(indices, self.shape)
+      flat_idx = np.ravel_multi_index(indices, self.shape)
+    else:
+      # outer indexing is more tricky
+      # TODO: share more code with combine_ranges
+      strides = np.ones(len(self.shape), dtype=self.indices.dtype)
+      np.cumprod(self.shape[:0:-1], out=strides[1:])
+      strides = strides[::-1]
+      flat_idx = indices[0] * strides[0]
+      for idx, s in zip(indices[1:], strides[1:]):
+        flat_idx = np.add.outer(flat_idx, idx * s).ravel()
+
     _, data_inds, new_indices = intersect1d_sorted(self.indices, flat_idx,
                                                    return_inds=True)
     new_data = self.data[data_inds]
@@ -298,8 +312,17 @@ class SpArray(object):
           ranges[i,:] = (idx, idx + 1, 1)
       return self._slice_ranges(ranges, tuple(new_shape), inner=False)
 
-    # harder case: convert everything to index arrays
-    raise NotImplementedError('Fancy slicing is still NYI')
+    # fancy indexing cases
+    # some slices are present, trigger outer indexing
+    if idx_type & (EMPTY_SLICE_INDEX_MASK | SLICE_INDEX_MASK):
+      mut_indices = list(indices)
+      for i, (idx, dim) in enumerate(zip(indices, self.shape)):
+        if isinstance(idx, slice):
+          mut_indices[i] = np.arange(*idx.indices(dim))
+      return self._slice_multi(mut_indices, inner=False)
+
+    # remaining case: inner indexing (ndim index arrays are NYI)
+    return self._slice_multi(indices, inner=True)
 
   def __setitem__(self, indices, val):
     indices, idx_type = self._prepare_indices(indices)

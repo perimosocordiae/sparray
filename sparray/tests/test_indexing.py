@@ -50,11 +50,10 @@ class TestIndexing(BaseSpArrayTest):
     assert_array_equal(dense1d[1:], self.sp1d[1:].toarray())
     assert_array_equal(dense2d[1:,1:], self.sp2d[1:,1:].toarray())
 
-  @unittest.expectedFailure
   def test_inner_indexing(self):
     idx = [0,2]
     assert_array_equal(dense1d[idx], self.sp1d[idx].toarray())
-    assert_array_equal(dense2d[idx,idx], self.sp1d[idx,idx].toarray())
+    assert_array_equal(dense2d[idx,idx], self.sp2d[idx,idx].toarray())
 
   @unittest.expectedFailure
   def test_outer_indexing(self):
@@ -62,14 +61,16 @@ class TestIndexing(BaseSpArrayTest):
     jj = np.array([0,2])
     assert_array_equal(dense2d[ii,jj], self.sp2d[ii,jj].toarray())
 
-  @unittest.expectedFailure
   def test_1d_boolean(self):
-    idx = np.random.randint(2, size=dense1d.shape).astype(bool)
-    assert_array_equal(dense1d[idx], self.sp1d[idx])
-    idx = np.random.randint(2, size=dense2d.shape[0]).astype(bool)
-    assert_array_equal(dense2d[idx], self.sp2d[idx])
-    idx = np.random.randint(2, size=dense2d.shape[1]).astype(bool)
-    assert_array_equal(dense2d[:,idx], self.sp2d[:,idx])
+    for idx in ([0,0,0,0,0], [1,0,0,0,0], [0,1,1,0,0], [1,1,1,1,1]):
+      idx = np.array(idx, dtype=bool)
+      assert_array_equal(dense1d[idx], self.sp1d[idx].toarray())
+    for idx in ([0,0,0,0], [1,0,0,0], [0,1,1,0], [1,1,1,1]):
+      idx = np.array(idx, dtype=bool)
+      assert_array_equal(dense2d[idx], self.sp2d[idx].toarray())
+    for idx in ([0,0,0], [1,0,0], [0,1,1], [1,1,1]):
+      idx = np.array(idx, dtype=bool)
+      assert_array_equal(dense2d[:,idx], self.sp2d[:,idx].toarray())
 
 
 class TestAssignment(BaseSpArrayTest):
