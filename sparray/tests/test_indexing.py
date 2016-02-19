@@ -47,7 +47,6 @@ class TestIndexing(BaseSpArrayTest):
       assert_array_equal(dense2d.diagonal(offset=k),
                          self.sp2d.diagonal(offset=k).toarray())
 
-  @unittest.expectedFailure
   def test_slicing(self):
     assert_array_equal(dense1d[1:], self.sp1d[1:].toarray())
     assert_array_equal(dense2d[1:,1:], self.sp2d[1:,1:].toarray())

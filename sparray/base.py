@@ -240,7 +240,7 @@ class SpArray(object):
     inner : boolean, see _slice_multi for explanation
     '''
     result_size = np.product(new_shape)
-    flat_idx = combine_ranges(ranges, self.shape, result_size, inner=True)
+    flat_idx = combine_ranges(ranges, self.shape, result_size, inner=inner)
     _, data_inds, new_indices = intersect1d_sorted(self.indices, flat_idx,
                                                    return_inds=True)
     return SpArray(new_indices, self.data[data_inds], new_shape,

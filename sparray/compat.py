@@ -65,8 +65,9 @@ def _union1d_sorted(a, b, return_masks=False):
 def _combine_ranges(ranges, shape, result_size, inner=False):
   if inner:
     return np.ravel_multi_index([np.arange(*row) for row in ranges], shape)
-  strides = np.cumprod(np.append(1, shape[:0:-1]))[::-1]
-  flat_ranges = ranges * strides[:, None]
+  strides = np.ones(len(shape), dtype=ranges.dtype)
+  np.cumprod(shape[:0:-1], out=strides[1:])
+  flat_ranges = ranges * strides[::-1, None]
   flat_idxs = (np.arange(*row) for row in flat_ranges)
   result = next(flat_idxs)
   for idx in flat_idxs:
