@@ -6,7 +6,7 @@ import warnings
 
 from .compat import (
     broadcast_to, broadcast_shapes, ufuncs_with_fixed_point_at_zero,
-    intersect1d_sorted, union1d_sorted
+    intersect1d_sorted, union1d_sorted, combine_ranges
 )
 
 
@@ -248,11 +248,24 @@ class SpArray(object):
 
     # non-fancy case: all indices are slices or integers
     if not any(hasattr(idx, 'shape') for idx in indices):
-      # convert slices to ranges
-      # TODO: find a way to avoid this, combining into a "flat range"?
-      indices = [np.arange(*idx.indices(dim)) if isinstance(idx, slice) else idx
-                 for idx, dim in zip(indices, self.shape)]
-      return self._slice_multi(indices, inner=False)
+      # convert everything to a common [[start, stop, step], ...] format
+      ranges = np.zeros((len(indices), 3), dtype=self.indices.dtype)
+      new_shape = []
+      for i, idx in enumerate(indices):
+        if isinstance(idx, slice):
+          row = idx.indices(self.shape[i])
+          ranges[i,:] = row
+          new_shape.append((row[1] - row[0]) // row[2])
+        else:
+          ranges[i,:] = (idx, idx + 1, 1)
+      new_shape = tuple(new_shape)
+      # produce a single flat index from the ranges
+      flat_idx = combine_ranges(ranges, self.shape)
+      # skip most of self._slice_multi
+      _, data_inds, new_indices = intersect1d_sorted(self.indices, flat_idx,
+                                                     return_inds=True)
+      return SpArray(new_indices, self.data[data_inds], new_shape,
+                     is_canonical=True)
 
     # TODO: implement the harder cases
     raise NotImplementedError('Fancy slicing is still NYI')

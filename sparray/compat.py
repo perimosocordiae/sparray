@@ -62,6 +62,14 @@ def _union1d_sorted(a, b, return_masks=False):
   return c, lut, a_mask, b_mask
 
 
+def combine_ranges(ranges, shape):
+  # TODO: implement this in Cython for speed
+  return np.ravel_multi_index([np.arange(*row) for row in ranges], shape)
+  # strides = np.cumprod(np.append(1, shape[:0:-1]))
+  # flat_ranges = ranges[::-1] * strides[::-1, None]
+  # return reduce(lambda a, b: np.add.outer(a, b).ravel(),
+  #               (np.arange(*row) for row in flat_ranges))
+
 # Apply the shims where necessary
 
 if hasattr(np, 'broadcast_to'):  # pragma: no cover
