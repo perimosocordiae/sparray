@@ -67,8 +67,11 @@ def _combine_ranges(ranges, shape, result_size, inner=False):
     return np.ravel_multi_index([np.arange(*row) for row in ranges], shape)
   strides = np.cumprod(np.append(1, shape[:0:-1]))[::-1]
   flat_ranges = ranges * strides[:, None]
-  return reduce(lambda a, b: np.add.outer(a, b).ravel(),
-                (np.arange(*row) for row in flat_ranges))
+  flat_idxs = (np.arange(*row) for row in flat_ranges)
+  result = next(flat_idxs)
+  for idx in flat_idxs:
+    result = np.add.outer(result, idx).ravel()
+  return result
 
 
 def _len_range(start, stop, step):
