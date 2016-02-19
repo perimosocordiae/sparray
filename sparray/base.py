@@ -9,6 +9,12 @@ from .compat import (
     intersect1d_sorted, union1d_sorted, combine_ranges, len_range
 )
 
+# masks for kinds of multidimensional indexing
+EMPTY_SLICE_INDEX_MASK = 0b1
+SLICE_INDEX_MASK = 0b10
+INTEGER_INDEX_MASK = 0b100
+ARRAY_INDEX_MASK = 0b1000
+
 
 class SpArray(object):
   '''Simple sparse ndarray-like, similar to scipy.sparse matrices.
@@ -187,7 +193,7 @@ class SpArray(object):
     if len(ell_inds) > 1:
       # According to http://sourceforge.net/p/numpy/mailman/message/12594675/,
       # only the first Ellipsis is "real", and the rest are just slice(None).
-      # In recent versions of numpy this is disallowed, so we'll take the easy route.
+      # In recent numpy versions this is disallowed, so we take the easy route.
       raise IndexError("an index can only have a single ellipsis ('...')")
     if ell_inds:
       # insert as many colons as we need at the Ellipsis position
@@ -216,6 +222,7 @@ class SpArray(object):
     assert len(mut_indices) == len(self.shape)
 
     # do some simple checking / fixup
+    idx_type = 0
     for axis, (idx, dim) in enumerate(zip(mut_indices, self.shape)):
       if isinstance(idx, numbers.Integral):
         if not (-dim <= idx < dim):
@@ -223,7 +230,15 @@ class SpArray(object):
                            'for axis %d with size %d' % (idx, axis, dim))
         if idx < 0:
           mut_indices[axis] += dim
-    return tuple(mut_indices)
+        idx_type |= INTEGER_INDEX_MASK
+      elif isinstance(idx, slice):
+        if idx == slice(None):
+          idx_type |= EMPTY_SLICE_INDEX_MASK
+        else:
+          idx_type |= SLICE_INDEX_MASK
+      elif hasattr(idx, 'shape'):
+        idx_type |= ARRAY_INDEX_MASK
+    return tuple(mut_indices), idx_type
 
   def _slice_multi(self, indices, inner=True):
     '''Helper for making a new SpArray using (int,array-like) indices.
@@ -255,14 +270,14 @@ class SpArray(object):
                    is_canonical=True)
 
   def __getitem__(self, indices):
-    indices = self._prepare_indices(indices)
+    indices, idx_type = self._prepare_indices(indices)
 
     # trivial case: all slices are colons
-    if all(isinstance(idx, slice) and idx == slice(None) for idx in indices):
+    if idx_type == EMPTY_SLICE_INDEX_MASK:
       return self
 
     # simple case: all indices are simple int indexes
-    if all(isinstance(idx, numbers.Integral) for idx in indices):
+    if idx_type == INTEGER_INDEX_MASK:
       flat_idx = np.ravel_multi_index(indices, self.shape)
       i = np.searchsorted(self.indices, flat_idx)
       if i >= len(self.indices) or self.indices[i] != flat_idx:
@@ -270,7 +285,7 @@ class SpArray(object):
       return self.data[i]
 
     # non-fancy case: all indices are slices or integers
-    if not any(hasattr(idx, 'shape') for idx in indices):
+    if not (idx_type & ARRAY_INDEX_MASK):
       # convert everything to a common [[start, stop, step], ...] format
       ranges = np.zeros((len(indices), 3), dtype=self.indices.dtype)
       new_shape = []
@@ -283,14 +298,14 @@ class SpArray(object):
           ranges[i,:] = (idx, idx + 1, 1)
       return self._slice_ranges(ranges, tuple(new_shape), inner=False)
 
-    # TODO: implement the harder cases
+    # harder case: convert everything to index arrays
     raise NotImplementedError('Fancy slicing is still NYI')
 
   def __setitem__(self, indices, val):
-    indices = self._prepare_indices(indices)
+    indices, idx_type = self._prepare_indices(indices)
 
     # all indices are simple int indexes
-    if all(isinstance(idx, numbers.Integral) for idx in indices):
+    if idx_type == INTEGER_INDEX_MASK:
       flat_idx = np.ravel_multi_index(indices, self.shape)
       i = np.searchsorted(self.indices, flat_idx)
       if i >= len(self.indices) or self.indices[i] != flat_idx:
