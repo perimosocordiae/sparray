@@ -3,7 +3,7 @@ import scipy.sparse as ss
 
 __all__ = [
     'broadcast_to', 'broadcast_shapes', 'ufuncs_with_fixed_point_at_zero',
-    'intersect1d_sorted', 'union1d_sorted'
+    'intersect1d_sorted', 'union1d_sorted', 'combine_ranges', 'len_range'
 ]
 
 
@@ -62,11 +62,25 @@ def _union1d_sorted(a, b, return_masks=False):
   return c, lut, a_mask, b_mask
 
 
-def _combine_ranges(ranges, shape, result_size):
+def _combine_ranges(ranges, shape, result_size, inner=False):
+  if inner:
+    return np.ravel_multi_index([np.arange(*row) for row in ranges], shape)
   strides = np.cumprod(np.append(1, shape[:0:-1]))[::-1]
   flat_ranges = ranges * strides[:, None]
   return reduce(lambda a, b: np.add.outer(a, b).ravel(),
                 (np.arange(*row) for row in flat_ranges))
+
+
+def _len_range(start, stop, step):
+  if step > 0:
+    if start >= stop:
+      return 0
+    return (stop - start - 1) // step + 1
+  # negative step case
+  if stop >= start:
+    return 0
+  return (start - stop - 1) // -step + 1
+
 
 # Apply the shims where necessary
 
@@ -85,15 +99,18 @@ else:  # pragma: no cover
 
 try:  # pragma: no cover
   # use pre-compiled _merge.so library
-  from _merge import intersect1d_sorted, union1d_sorted, combine_ranges
+  from _merge import (
+      intersect1d_sorted, union1d_sorted, combine_ranges, len_range)
 except ImportError:
   # try compiling it ourselves on the fly
   try:
     import pyximport
     pyximport.install(setup_args={'include_dirs': np.get_include()})
-    from _merge import intersect1d_sorted, union1d_sorted, combine_ranges
+    from _merge import (
+        intersect1d_sorted, union1d_sorted, combine_ranges, len_range)
   except ImportError:
     # fall back to pure-Python versions
     intersect1d_sorted = _intersect1d_sorted
     union1d_sorted = _union1d_sorted
     combine_ranges = _combine_ranges
+    len_range = _len_range

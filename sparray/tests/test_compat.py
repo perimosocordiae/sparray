@@ -37,10 +37,20 @@ class CompatibilityTest(unittest.TestCase):
 
   def test_combine_ranges(self):
     ranges = np.array([[0, 2, 1], [1, 2, 1], [1, 4, 2]])
-    expected = [5, 7, 17, 19]
+    expected_outer = [5, 7, 17, 19]
+    expected_inner = [5, 19]
     for fn in set((sc._combine_ranges, sc.combine_ranges)):
       x = fn(ranges, (2, 3, 4), 4)
-      assert_array_equal(x, expected)
+      assert_array_equal(x, expected_outer)
+      x = fn(ranges, (2, 3, 4), 2, inner=True)
+      assert_array_equal(x, expected_inner)
+
+  def test_len_range(self):
+    for fn in set((sc._len_range, sc.len_range)):
+      self.assertEqual(fn(0, 5, 1), len(range(0, 5, 1)))
+      self.assertEqual(fn(5, 1, 1), len(range(5, 1, 1)))
+      self.assertEqual(fn(5, 0, -1), len(range(5, 0, -1)))
+      self.assertEqual(fn(0, 5, -2), len(range(0, 5, -2)))
 
 if __name__ == '__main__':
   unittest.main()

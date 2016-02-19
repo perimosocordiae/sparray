@@ -6,7 +6,7 @@ import warnings
 
 from .compat import (
     broadcast_to, broadcast_shapes, ufuncs_with_fixed_point_at_zero,
-    intersect1d_sorted, union1d_sorted, combine_ranges
+    intersect1d_sorted, union1d_sorted, combine_ranges, len_range
 )
 
 
@@ -124,8 +124,10 @@ class SpArray(object):
       raise NotImplementedError('diagonal() is NYI for ndim > 2')
     if offset != 0 or axis1 != 0 or axis2 != 1:
       raise NotImplementedError('diagonal() is NYI for non-default parameters')
-    idx = np.arange(min(self.shape))
-    return self._slice_multi((idx, idx), inner=True)
+
+    n = min(self.shape)
+    ranges = np.array([[0, n, 1], [0, n, 1]], dtype=self.indices.dtype)
+    return self._slice_ranges(ranges, (n,), inner=True)
 
   def setdiag(self, values, offset=0):
     raise NotImplementedError('setdiag() is NYI')
@@ -231,6 +233,19 @@ class SpArray(object):
     new_data = self.data[data_inds]
     return SpArray(new_indices, new_data, shape, is_canonical=True)
 
+  def _slice_ranges(self, ranges, new_shape, inner=False):
+    '''Helper for making a new SpArray using slice/range indices.
+    ranges    : a (d, 3) array with rows of [start, stop, step] values
+    new_shape : the resulting shape after slicing
+    inner : boolean, see _slice_multi for explanation
+    '''
+    result_size = np.product(new_shape)
+    flat_idx = combine_ranges(ranges, self.shape, result_size, inner=True)
+    _, data_inds, new_indices = intersect1d_sorted(self.indices, flat_idx,
+                                                   return_inds=True)
+    return SpArray(new_indices, self.data[data_inds], new_shape,
+                   is_canonical=True)
+
   def __getitem__(self, indices):
     indices = self._prepare_indices(indices)
 
@@ -255,17 +270,10 @@ class SpArray(object):
         if isinstance(idx, slice):
           row = idx.indices(self.shape[i])
           ranges[i,:] = row
-          new_shape.append((row[1] - row[0]) // row[2])
+          new_shape.append(len_range(*row))
         else:
           ranges[i,:] = (idx, idx + 1, 1)
-      new_shape = tuple(new_shape)
-      # produce a single flat index from the ranges
-      flat_idx = combine_ranges(ranges, self.shape, np.product(new_shape))
-      # skip most of self._slice_multi
-      _, data_inds, new_indices = intersect1d_sorted(self.indices, flat_idx,
-                                                     return_inds=True)
-      return SpArray(new_indices, self.data[data_inds], new_shape,
-                     is_canonical=True)
+      return self._slice_ranges(ranges, tuple(new_shape), inner=False)
 
     # TODO: implement the harder cases
     raise NotImplementedError('Fancy slicing is still NYI')

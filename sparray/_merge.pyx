@@ -4,10 +4,11 @@ import numpy as np
 np.import_array()
 
 
-def combine_ranges(long[:,::1] ranges, shape, long result_size):
+def combine_ranges(long[:,::1] ranges, shape, long result_size,
+                   bint inner=False):
   cdef long[::1] result = np.zeros(result_size, dtype=np.int64)
   cdef long[::1] shape_arr = np.asarray(shape, dtype=np.int64)
-  combine_ranges_fast(ranges, shape_arr, result, result_size)
+  combine_ranges_fast(ranges, shape_arr, result, result_size, inner)
   return result
 
 
@@ -15,7 +16,8 @@ def combine_ranges(long[:,::1] ranges, shape, long result_size):
 @cython.wraparound(False)
 @cython.cdivision(True)
 cdef void combine_ranges_fast(long[:,::1] ranges, long[::1] shape,
-                              long[::1] result, long result_size) nogil:
+                              long[::1] result, long result_size,
+                              bint inner) nogil:
   # convert shape to strides in-place
   cdef Py_ssize_t ndim = shape.shape[0], cp = 1, tmp, i
   for i in range(ndim - 1, 0, -1):
@@ -23,9 +25,30 @@ cdef void combine_ranges_fast(long[:,::1] ranges, long[::1] shape,
     shape[i] = cp
     cp *= tmp
   shape[0] = cp
+
+  cdef Py_ssize_t start, stop, step, idx, c, range_len
+  # easier case: inner indexing
+  if inner:
+    for i in range(ndim):
+      start = ranges[i,0] * shape[i]
+      stop = ranges[i,1] * shape[i]
+      step = ranges[i,2] * shape[i]
+      range_len = len_range(start, stop, step)
+      if range_len == 1:
+        # one item, broadcast over the whole result
+        for c in range(result_size):
+          result[c] += start
+      else:
+        # range_len should be equal to result_size
+        idx = start
+        for c in range(result_size):
+          result[c] += idx
+          idx += step
+    return
+
+  # harder case: outer indexing
   # add each range to the result, repeated/tiled as appropriate
-  cdef Py_ssize_t start, stop, step, range_len, idx, t, r, c
-  cdef Py_ssize_t num_tiles, num_repeats = result_size
+  cdef Py_ssize_t t, r, num_tiles, num_repeats = result_size
   for i in range(ndim):
     start = ranges[i,0] * shape[i]
     stop = ranges[i,1] * shape[i]
@@ -44,7 +67,7 @@ cdef void combine_ranges_fast(long[:,::1] ranges, long[::1] shape,
 
 
 @cython.cdivision(True)
-cdef long len_range(long start, long stop, long step) nogil:
+cpdef inline long len_range(long start, long stop, long step) nogil:
   if step > 0:
     if start >= stop:
       return 0
