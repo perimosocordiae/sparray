@@ -260,7 +260,7 @@ class SpArray(object):
           ranges[i,:] = (idx, idx + 1, 1)
       new_shape = tuple(new_shape)
       # produce a single flat index from the ranges
-      flat_idx = combine_ranges(ranges, self.shape)
+      flat_idx = combine_ranges(ranges, self.shape, np.product(new_shape))
       # skip most of self._slice_multi
       _, data_inds, new_indices = intersect1d_sorted(self.indices, flat_idx,
                                                      return_inds=True)

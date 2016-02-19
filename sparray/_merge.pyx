@@ -4,6 +4,57 @@ import numpy as np
 np.import_array()
 
 
+def combine_ranges(long[:,::1] ranges, shape, long result_size):
+  cdef long[::1] result = np.zeros(result_size, dtype=np.int64)
+  cdef long[::1] shape_arr = np.asarray(shape, dtype=np.int64)
+  combine_ranges_fast(ranges, shape_arr, result, result_size)
+  return result
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+cdef void combine_ranges_fast(long[:,::1] ranges, long[::1] shape,
+                              long[::1] result, long result_size) nogil:
+  # convert shape to strides in-place
+  cdef Py_ssize_t ndim = shape.shape[0], cp = 1, tmp, i
+  for i in range(ndim - 1, 0, -1):
+    tmp = shape[i]
+    shape[i] = cp
+    cp *= tmp
+  shape[0] = cp
+  # add each range to the result, repeated/tiled as appropriate
+  cdef Py_ssize_t start, stop, step, range_len, idx, t, r, c
+  cdef Py_ssize_t num_tiles, num_repeats = result_size
+  for i in range(ndim):
+    start = ranges[i,0] * shape[i]
+    stop = ranges[i,1] * shape[i]
+    step = ranges[i,2] * shape[i]
+    range_len = len_range(start, stop, step)
+    num_tiles = result_size / num_repeats
+    num_repeats /= range_len
+    c = 0
+    for t in range(num_tiles):
+      idx = start
+      while idx < stop:
+        for r in range(num_repeats):
+          result[c] += idx
+          c += 1
+        idx += step
+
+
+@cython.cdivision(True)
+cdef long len_range(long start, long stop, long step) nogil:
+  if step > 0:
+    if start >= stop:
+      return 0
+    return (stop - start - 1) / step + 1
+  # negative step case
+  if stop >= start:
+    return 0
+  return (start - stop - 1) / -step + 1
+
+
 def intersect1d_sorted(long[::1] a, long[::1] b, bint return_inds=False):
   c = np.empty(min(len(a), len(b)), dtype=np.int64)
   cdef Py_ssize_t end = merge_intersect(a, b, c)
