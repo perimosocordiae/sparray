@@ -122,11 +122,19 @@ class SpArray(object):
     # TODO: support offsets, different axes, ndim > 2, etc
     if self.ndim > 2:
       raise NotImplementedError('diagonal() is NYI for ndim > 2')
-    if offset != 0 or axis1 != 0 or axis2 != 1:
-      raise NotImplementedError('diagonal() is NYI for non-default parameters')
+    if axis1 != 0 or axis2 != 1:
+      raise NotImplementedError('diagonal() is NYI for non-default axes')
 
-    n = min(self.shape)
-    ranges = np.array([[0, n, 1], [0, n, 1]], dtype=self.indices.dtype)
+    if offset >= 0:
+      n = min(self.shape[0], self.shape[1] - offset)
+      ranges = np.array([[0, n, 1], [offset, n + offset, 1]],
+                        dtype=self.indices.dtype)
+    else:
+      n = min(self.shape[0] + offset, self.shape[1])
+      ranges = np.array([[-offset, n - offset, 1], [0, n, 1]],
+                        dtype=self.indices.dtype)
+    if n < 0:
+      return SpArray([], [], shape=(0,), is_canonical=True)
     return self._slice_ranges(ranges, (n,), inner=True)
 
   def setdiag(self, values, offset=0):

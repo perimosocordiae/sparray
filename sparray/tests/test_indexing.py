@@ -41,9 +41,8 @@ class TestIndexing(BaseSpArrayTest):
     self.assertRaises(ValueError, lambda: self.sp1d.diagonal())
     self.assertRaises(ValueError, lambda: self.sp2d.diagonal(0,1,1))
 
-  @unittest.expectedFailure
   def test_offset_diagonal(self):
-    for k in [1, -1, 2, -2]:
+    for k in [1, -1, 2, -2, 3, -3, 4, -4]:
       assert_array_equal(dense2d.diagonal(offset=k),
                          self.sp2d.diagonal(offset=k).toarray())
 
