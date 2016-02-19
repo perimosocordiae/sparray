@@ -74,5 +74,46 @@ class TestIndexing(BaseSpArrayTest):
     assert_array_equal(dense2d[:,idx], self.sp2d[:,idx])
 
 
+class TestAssignment(BaseSpArrayTest):
+  def test_scalar_assignment_in_structure(self):
+    a = self.sp1d.copy()
+    a_dense = dense1d.copy()
+    a[3] = 99
+    a_dense[3] = 99
+    assert_array_equal(a_dense, a.toarray())
+
+    a = self.sp2d.copy()
+    a_dense = dense2d.copy()
+    a[3,1] = 99
+    a_dense[3,1] = 99
+    assert_array_equal(a_dense, a.toarray())
+
+  def test_scalar_assignment_not_in_structure(self):
+    a = self.sp1d.copy()
+    a_dense = dense1d.copy()
+    a[2] = 99
+    a_dense[2] = 99
+    assert_array_equal(a_dense, a.toarray())
+
+    a = self.sp2d.copy()
+    a_dense = dense2d.copy()
+    a[0,2] = 99
+    a_dense[0,2] = 99
+    assert_array_equal(a_dense, a.toarray())
+
+  @unittest.expectedFailure
+  def test_subarray_assignment(self):
+    a = self.sp1d.copy()
+    a_dense = dense1d.copy()
+    a[:3] = 99
+    a_dense[:3] = 99
+    assert_array_equal(a_dense, a.toarray())
+
+    a = self.sp2d.copy()
+    a_dense = dense2d.copy()
+    a[:2,:2] = 99
+    a_dense[:2,:2] = 99
+    assert_array_equal(a_dense, a.toarray())
+
 if __name__ == '__main__':
   unittest.main()

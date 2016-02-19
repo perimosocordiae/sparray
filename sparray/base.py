@@ -257,6 +257,33 @@ class SpArray(object):
     # TODO: implement the harder cases
     raise NotImplementedError('Fancy slicing is still NYI')
 
+  def __setitem__(self, indices, val):
+    indices = self._prepare_indices(indices)
+
+    # all indices are simple int indexes
+    if all(isinstance(idx, numbers.Integral) for idx in indices):
+      flat_idx = np.ravel_multi_index(indices, self.shape)
+      i = np.searchsorted(self.indices, flat_idx)
+      if i >= len(self.indices) or self.indices[i] != flat_idx:
+        # we're not in the existing sparsity structure
+        # TODO: raise a warning here?
+        new_size = self.data.shape[0] + 1
+        new_data = np.empty(new_size, dtype=self.data.dtype)
+        new_data[:i] = self.data[:i]
+        new_data[i+1:] = self.data[i:]
+        new_indices = np.empty(new_size, dtype=self.indices.dtype)
+        new_indices[:i] = self.indices[:i]
+        new_indices[i] = flat_idx
+        new_indices[i+1:] = self.indices[i:]
+        self.data = new_data
+        self.indices = new_indices
+      # we're now definitely in the sparsity structure, so assign away
+      self.data[i] = val
+      return
+
+    # TODO: implement the rest
+    raise NotImplementedError('Fancy assignment is still NYI')
+
   def _pairwise_sparray(self, other, ufunc, dtype=None):
     '''Helper function for the pattern: ufunc(sparse, sparse) -> sparse
     other : SpArray with the same shape
