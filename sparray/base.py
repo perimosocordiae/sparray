@@ -183,38 +183,39 @@ class SpArray(object):
   def _prepare_indices(self, index):
     # avoid dealing with non-tuple cases
     if not isinstance(index, tuple):
-      mut_indices = [index]
-    else:
-      mut_indices = list(index)
-    missing_dims = len(self.shape) - len(mut_indices)
+      index = (index,)
 
-    # check for Ellipsis
-    ell_inds = [i for i, idx in enumerate(mut_indices) if idx is Ellipsis]
+    # check for Ellipsis and array-like indices
+    ell_inds = []
+    mut_indices = []
+    for idx in index:
+      if idx is Ellipsis:
+        ell_inds.append(len(mut_indices))
+      elif not isinstance(idx, (slice, numbers.Integral)):
+        if not hasattr(idx, 'ndim'):
+          idx = np.array(idx, copy=False, subok=True, order='A')
+        if idx.dtype in (bool, np.bool_):
+          mut_indices.extend(idx.nonzero())
+          continue
+        if idx.ndim > 1:
+          # TODO: support this case
+          raise NotImplementedError('Multi-dimensional indexing is NYI')
+      mut_indices.append(idx)
+
     if len(ell_inds) > 1:
       # According to http://sourceforge.net/p/numpy/mailman/message/12594675/,
       # only the first Ellipsis is "real", and the rest are just slice(None).
       # In recent numpy versions this is disallowed, so we take the easy route.
       raise IndexError("an index can only have a single ellipsis ('...')")
+
+    # pad missing dimensions with colons (empty slices)
+    missing_dims = len(self.shape) - len(mut_indices)
     if ell_inds:
       # insert as many colons as we need at the Ellipsis position
-      ell_pos = ell_inds[0]
+      ell_pos, = ell_inds
       mut_indices[ell_pos:ell_pos+1] = [slice(None)] * (missing_dims+1)
     elif missing_dims > 0:
-      # append colons to fill out any remaining indices
       mut_indices.extend([slice(None)] * missing_dims)
-
-    # check for array-like indices
-    # TODO: handle indices with ndim > 1
-    for i, idx in enumerate(mut_indices):
-      if isinstance(idx, (slice, numbers.Integral)):
-        continue
-      if not hasattr(idx, 'ndim'):
-        idx = np.array(idx, copy=False, subok=True, order='A')
-      if idx.ndim > 1:
-        raise NotImplementedError('Multi-dimensional indexing is NYI')
-      if idx.dtype in (bool, np.bool_):
-        idx, = idx.nonzero()
-      mut_indices[i] = idx
 
     if len(mut_indices) > len(self.shape):
       raise IndexError('too many indices for SpArray')

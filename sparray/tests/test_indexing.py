@@ -72,6 +72,13 @@ class TestIndexing(BaseSpArrayTest):
       idx = np.array(idx, dtype=bool)
       assert_array_equal(dense2d[:,idx], self.sp2d[:,idx].toarray())
 
+  def test_nd_boolean(self):
+    idx = ((np.arange(12) % 3) == 0).reshape(dense2d.shape)
+    assert_array_equal(dense2d[idx], self.sp2d[idx])
+    idx[:,:] = False
+    assert_array_equal(dense2d[idx], self.sp2d[idx])
+    idx[:,:] = True
+    assert_array_equal(dense2d[idx], self.sp2d[idx])
 
 class TestAssignment(BaseSpArrayTest):
   def test_scalar_assignment_in_structure(self):
