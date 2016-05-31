@@ -164,10 +164,9 @@ class SpArray(object):
       return self
 
     diag_indices = combine_ranges(ranges, self.shape, n, inner=True)
-    idx, lut, lhs_only, rhs_only = union1d_sorted(self.indices, diag_indices,
-                                                  return_masks=True)
+    idx, lut = union1d_sorted(self.indices, diag_indices, return_masks=True)[:2]
     data = np.empty_like(idx, dtype=self.dtype)
-    data[lut==0] = self.data[lhs_only]
+    data[lut!=1] = self.data
     data[lut!=0] = values
 
     self.indices = idx
