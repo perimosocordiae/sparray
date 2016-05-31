@@ -19,20 +19,20 @@ dense1d_indices = [0,1,3,4]
 dense1d_data = [-2,-1,1,2]
 
 
-def assert_sparse_equal(a, b):
+def assert_sparse_equal(a, b, err_msg=''):
   if hasattr(a, 'A'):
     a = a.A
   if hasattr(b, 'A'):
     b = b.A
-  return assert_array_equal(a, b)
+  return assert_array_equal(a, b, err_msg=err_msg)
 
 
-def assert_sparse_almost_equal(a, b):
+def assert_sparse_almost_equal(a, b, err_msg=''):
   if hasattr(a, 'A'):
     a = a.A
   if hasattr(b, 'A'):
     b = b.A
-  return assert_array_almost_equal(a, b)
+  return assert_array_almost_equal(a, b, err_msg=err_msg)
 
 
 class BaseSpArrayTest(unittest.TestCase):
