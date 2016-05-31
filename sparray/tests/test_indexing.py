@@ -110,7 +110,6 @@ class TestAssignment(BaseSpArrayTest):
     a_dense[0,2] = 99
     assert_array_equal(a_dense, a.toarray())
 
-  @unittest.expectedFailure
   def test_subarray_assignment(self):
     a = self.sp1d.copy()
     a_dense = dense1d.copy()

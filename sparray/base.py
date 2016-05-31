@@ -164,13 +164,7 @@ class SpArray(object):
       return self
 
     diag_indices = combine_ranges(ranges, self.shape, n, inner=True)
-    idx, lut = union1d_sorted(self.indices, diag_indices, return_masks=True)[:2]
-    data = np.empty_like(idx, dtype=self.dtype)
-    data[lut!=1] = self.data
-    data[lut!=0] = values
-
-    self.indices = idx
-    self.data = data
+    self._setitem_flatidx(diag_indices, values)
 
   def __repr__(self):
     return '<%s-SpArray of type %s\n\twith %d stored elements>' % (
@@ -327,16 +321,7 @@ class SpArray(object):
 
     # non-fancy case: all indices are slices or integers
     if not (idx_type & ARRAY_INDEX_MASK):
-      # convert everything to a common [[start, stop, step], ...] format
-      ranges = np.zeros((len(indices), 3), dtype=self.indices.dtype)
-      new_shape = []
-      for i, idx in enumerate(indices):
-        if isinstance(idx, slice):
-          row = idx.indices(self.shape[i])
-          ranges[i,:] = row
-          new_shape.append(len_range(*row))
-        else:
-          ranges[i,:] = (idx, idx + 1, 1)
+      ranges, new_shape = self._indices_to_ranges(indices)
       return self._slice_ranges(ranges, tuple(new_shape), inner=False)
 
     # fancy indexing cases
@@ -353,6 +338,10 @@ class SpArray(object):
 
   def __setitem__(self, indices, val):
     indices, idx_type = self._prepare_indices(indices)
+
+    # all slices are colons
+    if idx_type == EMPTY_SLICE_INDEX_MASK:
+      raise ValueError('Assigning to entire SpArray would densify.')
 
     # all indices are simple int indexes
     if idx_type == INTEGER_INDEX_MASK:
@@ -375,8 +364,47 @@ class SpArray(object):
       self.data[i] = val
       return
 
+    # non-fancy case: all indices are slices or integers
+    if not (idx_type & ARRAY_INDEX_MASK):
+      ranges, idx_shape = self._indices_to_ranges(indices)
+      new_indices = combine_ranges(ranges, self.shape, np.product(idx_shape),
+                                   inner=False)
+      self._setitem_flatidx(new_indices, val)
+      return
+
     # TODO: implement the rest
     raise NotImplementedError('Fancy assignment is still NYI')
+
+  def _indices_to_ranges(self, indices):
+    '''Assumes that all indices are slices or integers.
+    Returns:
+      ranges - an array of [(start, stop, step)] values
+      new_shape - the resulting shape of the indexing operation
+    '''
+    ranges = np.zeros((len(indices), 3), dtype=self.indices.dtype)
+    new_shape = []
+    for i, idx in enumerate(indices):
+      if isinstance(idx, slice):
+        row = idx.indices(self.shape[i])
+        ranges[i,:] = row
+        new_shape.append(len_range(*row))
+      else:
+        ranges[i,:] = (idx, idx + 1, 1)
+    return ranges, new_shape
+
+  def _setitem_flatidx(self, flat_idx, values):
+    idx, lut, lhs_only, rhs_only = union1d_sorted(self.indices, flat_idx,
+                                                  return_masks=True)
+    if np.count_nonzero(rhs_only) == 0:
+      # no change to sparsity structure
+      self.data[lut!=0] = values
+    else:
+      # need to expand the structure (TODO: warn here?)
+      data = np.empty_like(idx, dtype=self.dtype)
+      data[lut!=1] = self.data
+      data[lut!=0] = values
+      self.indices = idx
+      self.data = data
 
   def _pairwise_sparray(self, other, ufunc, dtype=None):
     '''Helper function for the pattern: ufunc(sparse, sparse) -> sparse
