@@ -72,7 +72,7 @@ def _combine_ranges(ranges, shape, result_size, inner=False):
   result = next(flat_idxs)
   for idx in flat_idxs:
     result = np.add.outer(result, idx).ravel()
-  return result
+  return result[:result_size]
 
 
 def _len_range(start, stop, step):

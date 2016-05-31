@@ -3,7 +3,8 @@ import numpy as np
 import unittest
 from numpy.testing import assert_array_equal
 
-from .test_base import BaseSpArrayTest, dense2d, dense1d
+from .test_base import (
+    BaseSpArrayTest, dense2d, dense1d, sparse2d, assert_sparse_equal)
 
 
 class TestIndexing(BaseSpArrayTest):
@@ -43,8 +44,9 @@ class TestIndexing(BaseSpArrayTest):
 
   def test_offset_diagonal(self):
     for k in [1, -1, 2, -2, 3, -3, 4, -4]:
-      assert_array_equal(dense2d.diagonal(offset=k),
-                         self.sp2d.diagonal(offset=k).toarray())
+      assert_sparse_equal(dense2d.diagonal(offset=k),
+                          self.sp2d.diagonal(offset=k),
+                          err_msg='Mismatch for k=%d' % k)
 
   def test_slicing(self):
     assert_array_equal(dense1d[1:], self.sp1d[1:].toarray())
@@ -79,6 +81,7 @@ class TestIndexing(BaseSpArrayTest):
     assert_array_equal(dense2d[idx], self.sp2d[idx])
     idx[:,:] = True
     assert_array_equal(dense2d[idx], self.sp2d[idx])
+
 
 class TestAssignment(BaseSpArrayTest):
   def test_scalar_assignment_in_structure(self):
@@ -120,6 +123,14 @@ class TestAssignment(BaseSpArrayTest):
     a[:2,:2] = 99
     a_dense[:2,:2] = 99
     assert_array_equal(a_dense, a.toarray())
+
+  def test_setdiag(self):
+    for k in [0, 1, -1, 2, -2]:
+      a = self.sp2d.copy()
+      a_sparse = sparse2d.copy()
+      a.setdiag(99, offset=k)
+      a_sparse.setdiag(99, k=k)
+      assert_sparse_equal(a_sparse, a, err_msg='Mismatch for k=%d' % k)
 
 if __name__ == '__main__':
   unittest.main()

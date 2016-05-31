@@ -1,4 +1,7 @@
 import scipy.sparse as ss
+import warnings
+warnings.simplefilter('ignore', ss.SparseEfficiencyWarning)
+
 from sparray import SpArray
 
 
@@ -33,3 +36,19 @@ class Operations(object):
 
   def time_diagonal(self, arr_type):
     self.arr.diagonal()
+
+
+class ImpureOperations(object):
+  params = [['SpArray', 'csr_matrix']]
+  param_names = ['arr_type']
+  number = 1  # make sure we re-run setup() before each timing
+
+  def setup(self, arr_type):
+    mat = ss.rand(3000, 4000, density=0.1, format='csr')
+    if arr_type == 'SpArray':
+      self.arr = SpArray.from_spmatrix(mat)
+    else:
+      self.arr = mat
+
+  def time_setdiag(self, arr_type):
+    self.arr.setdiag(99)

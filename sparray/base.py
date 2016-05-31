@@ -125,7 +125,7 @@ class SpArray(object):
       raise ValueError('axis1 and axis2 cannot be the same')
     if self.ndim < 2:
       raise ValueError('diagonal requires at least two dimensions')
-    # TODO: support offsets, different axes, ndim > 2, etc
+    # TODO: support different axes, ndim > 2, etc
     if self.ndim > 2:
       raise NotImplementedError('diagonal() is NYI for ndim > 2')
     if axis1 != 0 or axis2 != 1:
@@ -144,7 +144,34 @@ class SpArray(object):
     return self._slice_ranges(ranges, (n,), inner=True)
 
   def setdiag(self, values, offset=0):
-    raise NotImplementedError('setdiag() is NYI')
+    if self.ndim < 2:
+      raise ValueError('setdiag() requires at least two dimensions')
+    # TODO: support different axes, ndim > 2, etc
+    if self.ndim > 2:
+      raise NotImplementedError('setdiag() is NYI for ndim > 2')
+
+    # XXX: copypasta from diagonal()
+    if offset >= 0:
+      n = min(self.shape[0], self.shape[1] - offset)
+      ranges = np.array([[0, n, 1], [offset, n + offset, 1]],
+                        dtype=self.indices.dtype)
+    else:
+      n = min(self.shape[0] + offset, self.shape[1])
+      ranges = np.array([[-offset, n - offset, 1], [0, n, 1]],
+                        dtype=self.indices.dtype)
+
+    if n < 0:
+      return self
+
+    diag_indices = combine_ranges(ranges, self.shape, n, inner=True)
+    idx, lut, lhs_only, rhs_only = union1d_sorted(self.indices, diag_indices,
+                                                  return_masks=True)
+    data = np.empty_like(idx, dtype=self.dtype)
+    data[lut==0] = self.data[lhs_only]
+    data[lut!=0] = values
+
+    self.indices = idx
+    self.data = data
 
   def __repr__(self):
     return '<%s-SpArray of type %s\n\twith %d stored elements>' % (
