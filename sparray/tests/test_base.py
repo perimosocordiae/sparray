@@ -18,6 +18,10 @@ dense1d = np.arange(5) - 2
 dense1d_indices = [0,1,3,4]
 dense1d_data = [-2,-1,1,2]
 
+dense3d = np.arange(24).reshape((3,2,4))[::-1]
+dense3d[[0,2],:,2:] = 0
+dense3d[1,0,:] = 0
+
 
 def assert_sparse_equal(a, b, err_msg=''):
   if hasattr(a, 'A'):
@@ -40,11 +44,13 @@ class BaseSpArrayTest(unittest.TestCase):
   def setUp(self):
     self.sp1d = SpArray(dense1d_indices, dense1d_data, shape=dense1d.shape)
     self.sp2d = SpArray(dense2d_indices, dense2d_data, shape=dense2d.shape)
+    self.sp3d = SpArray.from_ndarray(dense3d)
     self.pairs = [
         (dense1d, self.sp1d),
         (dense2d, self.sp2d),
         (np.array([]), SpArray([],[],shape=(0,))),
         (np.zeros((1,2,3)), SpArray([],[],shape=(1,2,3))),
+        (dense3d, self.sp3d),
     ]
 
   def _same_op(self, op, assertFn):
@@ -62,7 +68,7 @@ class TestCreation(unittest.TestCase):
     assert_array_equal(b.toarray(), dense1d)
 
   def test_from_ndarray(self):
-    for arr in (dense2d, dense1d):
+    for arr in (dense2d, dense1d, dense3d):
       a = SpArray.from_ndarray(arr)
       assert_array_equal(a.toarray(), arr)
 

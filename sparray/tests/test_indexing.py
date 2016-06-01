@@ -4,7 +4,7 @@ import unittest
 from numpy.testing import assert_array_equal
 
 from .test_base import (
-    BaseSpArrayTest, dense2d, dense1d, sparse2d, assert_sparse_equal)
+    BaseSpArrayTest, dense1d, dense2d, sparse2d, dense3d, assert_sparse_equal)
 
 
 class TestIndexing(BaseSpArrayTest):
@@ -51,6 +51,20 @@ class TestIndexing(BaseSpArrayTest):
   def test_slicing(self):
     assert_array_equal(dense1d[1:], self.sp1d[1:].toarray())
     assert_array_equal(dense2d[1:,1:], self.sp2d[1:,1:].toarray())
+
+  def test_mixed_fancy_indexing(self):
+    idx = [0,2]
+    assert_array_equal(dense2d[:,idx], self.sp2d[:,idx].toarray())
+    assert_array_equal(dense2d[idx,:], self.sp2d[idx,:].toarray())
+
+    assert_array_equal(dense3d[idx,:,idx], self.sp3d[idx,:,idx].toarray())
+    assert_array_equal(dense3d[[1],:,idx], self.sp3d[[1],:,idx].toarray())
+    assert_array_equal(dense3d[:,[1],idx], self.sp3d[:,[1],idx].toarray())
+    assert_array_equal(dense3d[idx,[1],:], self.sp3d[idx,[1],:].toarray())
+
+    assert_array_equal(dense3d[2,:,idx], self.sp3d[2,:,idx].toarray())
+    assert_array_equal(dense3d[:,1,idx], self.sp3d[:,1,idx].toarray())
+    assert_array_equal(dense3d[idx,1,:], self.sp3d[idx,1,:].toarray())
 
   def test_inner_indexing(self):
     idx = [0,2]
