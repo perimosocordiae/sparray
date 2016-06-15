@@ -11,7 +11,7 @@ else:
 
 setup_kwargs = dict(
     name='sparray',
-    version='0.0.3',
+    version='0.0.4',
     author='CJ Carey',
     author_email='perimosocordiae@gmail.com',
     description='Sparse representation for ndarrays',
