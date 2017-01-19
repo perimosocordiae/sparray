@@ -3,7 +3,7 @@ import numpy as np
 import scipy.sparse as ss
 import warnings
 from numpy.testing import assert_array_equal, assert_array_almost_equal
-from sparray import SpArray
+from sparray import FlatSparray
 
 dense2d = np.array([[0,0,0],[4,5,7],[6,2,0],[1,3,8]], dtype=float) / 2.
 dense2d_indices = [1,3,4,5,6,7,9,10,11]
@@ -39,17 +39,17 @@ def assert_sparse_almost_equal(a, b, err_msg=''):
   return assert_array_almost_equal(a, b, err_msg=err_msg)
 
 
-class BaseSpArrayTest(unittest.TestCase):
+class BaseSparrayTest(unittest.TestCase):
   '''Base class that other tests can inherit from'''
   def setUp(self):
-    self.sp1d = SpArray(dense1d_indices, dense1d_data, shape=dense1d.shape)
-    self.sp2d = SpArray(dense2d_indices, dense2d_data, shape=dense2d.shape)
-    self.sp3d = SpArray.from_ndarray(dense3d)
+    self.sp1d = FlatSparray(dense1d_indices, dense1d_data, shape=dense1d.shape)
+    self.sp2d = FlatSparray(dense2d_indices, dense2d_data, shape=dense2d.shape)
+    self.sp3d = FlatSparray.from_ndarray(dense3d)
     self.pairs = [
         (dense1d, self.sp1d),
         (dense2d, self.sp2d),
-        (np.array([]), SpArray([],[],shape=(0,))),
-        (np.zeros((1,2,3)), SpArray([],[],shape=(1,2,3))),
+        (np.array([]), FlatSparray([],[],shape=(0,))),
+        (np.zeros((1,2,3)), FlatSparray([],[],shape=(1,2,3))),
         (dense3d, self.sp3d),
     ]
 
@@ -60,21 +60,21 @@ class BaseSpArrayTest(unittest.TestCase):
 
 class TestCreation(unittest.TestCase):
   def test_init(self):
-    a = SpArray(dense2d_indices, dense2d_data, shape=dense2d.shape)
+    a = FlatSparray(dense2d_indices, dense2d_data, shape=dense2d.shape)
     assert_array_equal(a.toarray(), dense2d)
-    b = SpArray(dense1d_indices, dense1d_data, shape=dense1d.shape)
+    b = FlatSparray(dense1d_indices, dense1d_data, shape=dense1d.shape)
     assert_array_equal(b.toarray(), dense1d)
-    b = SpArray(dense1d_indices, dense1d_data)
+    b = FlatSparray(dense1d_indices, dense1d_data)
     assert_array_equal(b.toarray(), dense1d)
 
   def test_from_ndarray(self):
     for arr in (dense2d, dense1d, dense3d):
-      a = SpArray.from_ndarray(arr)
+      a = FlatSparray.from_ndarray(arr)
       assert_array_equal(a.toarray(), arr)
 
   def test_from_spmatrix(self):
     for fmt in ('csr', 'csc', 'coo', 'dok', 'lil', 'dia'):
-      a = SpArray.from_spmatrix(sparse2d.asformat(fmt))
+      a = FlatSparray.from_spmatrix(sparse2d.asformat(fmt))
       assert_array_equal(a.toarray(), dense2d,
                          'Failed to convert from %s' % fmt.upper())
 

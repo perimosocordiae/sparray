@@ -4,18 +4,18 @@ import numpy as np
 from numpy.testing import assert_array_equal
 
 from .test_base import (
-    assert_sparse_equal, BaseSpArrayTest, dense2d,
+    assert_sparse_equal, BaseSparrayTest, dense2d,
     dense1d_indices, dense1d_data
 )
 
 
-class TestOps(BaseSpArrayTest):
+class TestOps(BaseSparrayTest):
   def test_tocoo(self):
     assert_array_equal(self.sp2d.tocoo().A, dense2d)
 
   def test_repr(self):
     for _, s in self.pairs:
-      self.assertRegexpMatches(repr(s), r'<\(.*?\)-SpArray')
+      self.assertRegexpMatches(repr(s), r'<\(.*?\)-FlatSparray')
 
   def test_str(self):
     expected = '\n'.join('  (%d,)\t%d' % x

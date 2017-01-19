@@ -4,10 +4,10 @@ import unittest
 from numpy.testing import assert_array_equal
 
 from .test_base import (
-    BaseSpArrayTest, dense1d, dense2d, sparse2d, dense3d, assert_sparse_equal)
+    BaseSparrayTest, dense1d, dense2d, sparse2d, dense3d, assert_sparse_equal)
 
 
-class TestIndexing(BaseSpArrayTest):
+class TestIndexing(BaseSparrayTest):
 
   def test_simple_indexing(self):
     for i in [0, 1, len(dense1d)-1, -1]:
@@ -97,7 +97,7 @@ class TestIndexing(BaseSpArrayTest):
     assert_array_equal(dense2d[idx], self.sp2d[idx])
 
 
-class TestAssignment(BaseSpArrayTest):
+class TestAssignment(BaseSparrayTest):
   def test_scalar_assignment_in_structure(self):
     a = self.sp1d.copy()
     a_dense = dense1d.copy()

@@ -4,12 +4,13 @@ import numpy as np
 import scipy.sparse as ss
 import warnings
 from numpy.testing import assert_array_equal, assert_array_almost_equal
-from sparray import SpArray
+from sparray import FlatSparray
 from sparray.compat import ufuncs_with_fixed_point_at_zero
 
 from .test_base import (
-    assert_sparse_equal, BaseSpArrayTest, dense2d, sparse2d, dense1d
+    assert_sparse_equal, BaseSparrayTest, dense2d, sparse2d, dense1d
 )
+
 
 # Check for __numpy_ufunc__
 class _UFuncCheck(object):
@@ -24,7 +25,7 @@ HAS_NUMPY_UFUNC = False
 np.add(_UFuncCheck(), np.array([1]))
 
 
-class TestUfuncs(BaseSpArrayTest):
+class TestUfuncs(BaseSparrayTest):
 
   @unittest.skipUnless(HAS_NUMPY_UFUNC, 'Requires __numpy_ufunc__ support')
   def test_add_ndarray_ufunc(self):
@@ -55,12 +56,12 @@ class TestUfuncs(BaseSpArrayTest):
   @unittest.skipUnless(HAS_NUMPY_UFUNC, 'Requires __numpy_ufunc__ support')
   def test_mul_sparray_ufunc(self):
     s = ss.rand(*sparse2d.shape, density=0.5)
-    b = SpArray.from_spmatrix(s)
+    b = FlatSparray.from_spmatrix(s)
     assert_sparse_equal(np.multiply(dense2d, s), self.sp2d * b)
     # Test broadcasting
     for shape in [(sparse2d.shape[0], 1), (1, sparse2d.shape[1])]:
       s = ss.rand(*shape, density=0.5)
-      b = SpArray.from_spmatrix(s)
+      b = FlatSparray.from_spmatrix(s)
       assert_sparse_equal(np.multiply(dense2d, s), self.sp2d * b)
 
   @unittest.skipUnless(HAS_NUMPY_UFUNC, 'Requires __numpy_ufunc__ support')
@@ -78,7 +79,7 @@ class TestUfuncs(BaseSpArrayTest):
   @unittest.skipUnless(HAS_NUMPY_UFUNC, 'Requires __numpy_ufunc__ support')
   def test_div_sparray_ufunc(self):
     s = ss.rand(*sparse2d.shape, density=0.5)
-    b = SpArray.from_spmatrix(s)
+    b = FlatSparray.from_spmatrix(s)
     # spmatrix / spmatrix is broken in scipy, so we compare against ndarrays
     c = s.toarray()
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -103,13 +104,13 @@ class TestUfuncs(BaseSpArrayTest):
   @unittest.skipUnless(HAS_NUMPY_UFUNC, 'Requires __numpy_ufunc__ support')
   def test_dot_ufunc(self):
     b = np.random.random((dense2d.shape[1], dense2d.shape[0]))
-    # XXX: for older numpys, ndarray.dot(SpArray) wraps us in an object array.
+    # XXX: in older numpy, ndarray.dot(FlatSparray) wraps us in an object array.
     assert_array_equal(b.dot(dense2d), b.dot(self.sp2d))
     assert_array_equal(np.dot(dense2d, b), np.dot(self.sp2d, b))
     assert_array_equal(np.dot(b, dense2d), np.dot(b, self.sp2d))
 
     b = np.random.random(dense1d.shape[0])
-    # XXX: for older numpys, ndarray.dot(SpArray) wraps us in an object array.
+    # XXX: in older numpy, ndarray.dot(FlatSparray) wraps us in an object array.
     self.assertEqual(b.dot(dense1d), b.dot(self.sp1d))
 
   @unittest.skipUnless(HAS_NUMPY_UFUNC, 'Requires __numpy_ufunc__ support')
@@ -121,7 +122,7 @@ class TestUfuncs(BaseSpArrayTest):
   @unittest.skipUnless(HAS_NUMPY_UFUNC, 'Requires __numpy_ufunc__ support')
   def test_minmax_imum_sparray_ufunc(self):
     s = ss.rand(*sparse2d.shape, density=0.5)
-    b = SpArray.from_spmatrix(s)
+    b = FlatSparray.from_spmatrix(s)
     assert_array_equal(np.minimum(dense2d, s),
                        np.minimum(self.sp2d, b).toarray())
     assert_array_equal(np.maximum(dense2d, s),

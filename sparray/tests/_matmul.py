@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
-from .test_base import BaseSpArrayTest, dense1d, dense2d
+from .test_base import BaseSparrayTest, dense1d, dense2d
 
 # Check for numpy 1.10+
 HAS_NUMPY_MATMUL = True
@@ -13,7 +13,7 @@ except TypeError:
   HAS_NUMPY_MATMUL = False
 
 
-class TestMatmulOperator(BaseSpArrayTest):
+class TestMatmulOperator(BaseSparrayTest):
 
   @unittest.skipUnless(HAS_NUMPY_MATMUL, 'Requires numpy with @ support')
   def test_matmul(self):
@@ -26,4 +26,3 @@ class TestMatmulOperator(BaseSpArrayTest):
     # Test bad alignment for dot
     b = np.random.random(dense1d.shape[0] + 1)
     self.assertRaises(ValueError, lambda: self.sp1d @ b)
-

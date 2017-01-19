@@ -4,7 +4,7 @@ import timeit
 import numpy as np
 import scipy.sparse as ss
 
-from sparray import SpArray
+from sparray import FlatSparray
 
 
 def run_bench(fn, arrays, number=100, repeats=3):
@@ -30,9 +30,9 @@ def format_time(usec):
 
 def main():
   arr = ss.rand(1000, 500, density=0.1)
-  fmts = ['csr', 'csc', 'dense', 'SpArray']
+  fmts = ['csr', 'csc', 'dense', 'FlatSparray']
   arrays = [arr.tocsr(), arr.tocsc(), arr.toarray(),
-            SpArray.from_spmatrix(arr)]
+            FlatSparray.from_spmatrix(arr)]
   benches = [
       ('arr * 3', lambda a: a * 3),
       ('arr.sum()', lambda a: a.sum()),
@@ -44,7 +44,7 @@ def main():
   ]
 
   label_size = max(len(b[0]) for b in benches)
-  fmt_size = 8
+  fmt_size = max(len(f) for f in fmts[:-1]) + 1
   print(' ' * label_size, *[f.ljust(fmt_size) for f in fmts])
   for label, fn in benches:
     result = list(run_bench(fn, arrays))

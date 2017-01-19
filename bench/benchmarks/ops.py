@@ -2,17 +2,17 @@ import scipy.sparse as ss
 import warnings
 warnings.simplefilter('ignore', ss.SparseEfficiencyWarning)
 
-from sparray import SpArray
+from sparray import FlatSparray
 
 
 class Operations(object):
-  params = [['SpArray', 'csr_matrix']]
+  params = [['FlatSparray', 'csr_matrix']]
   param_names = ['arr_type']
 
   def setup(self, arr_type):
     mat = ss.rand(3000, 4000, density=0.1, format='csr')
-    if arr_type == 'SpArray':
-      self.arr = SpArray.from_spmatrix(mat)
+    if arr_type == 'FlatSparray':
+      self.arr = FlatSparray.from_spmatrix(mat)
     else:
       self.arr = mat
 
@@ -39,14 +39,14 @@ class Operations(object):
 
 
 class ImpureOperations(object):
-  params = [['SpArray', 'csr_matrix']]
+  params = [['FlatSparray', 'csr_matrix']]
   param_names = ['arr_type']
   number = 1  # make sure we re-run setup() before each timing
 
   def setup(self, arr_type):
     mat = ss.rand(3000, 4000, density=0.1, format='csr')
-    if arr_type == 'SpArray':
-      self.arr = SpArray.from_spmatrix(mat)
+    if arr_type == 'FlatSparray':
+      self.arr = FlatSparray.from_spmatrix(mat)
     else:
       self.arr = mat
 

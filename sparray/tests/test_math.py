@@ -4,21 +4,21 @@ import numpy as np
 import scipy.sparse as ss
 import warnings
 from numpy.testing import assert_array_equal, assert_array_almost_equal
-from sparray import SpArray
+from sparray import FlatSparray
 from sparray.compat import ufuncs_with_fixed_point_at_zero
 
 from .test_base import (
     assert_sparse_equal, assert_sparse_almost_equal,
-    BaseSpArrayTest, dense2d, sparse2d, dense1d
+    BaseSparrayTest, dense2d, sparse2d, dense1d
 )
 
 
-class TestMath(BaseSpArrayTest):
+class TestMath(BaseSparrayTest):
   def setUp(self):
-    BaseSpArrayTest.setUp(self)
+    BaseSparrayTest.setUp(self)
     # add complex test data
     d = dense2d * 1j
-    self.pairs.append((d, SpArray.from_ndarray(d)))
+    self.pairs.append((d, FlatSparray.from_ndarray(d)))
 
   def test_add_ndarray(self):
     b = np.random.random(dense2d.shape)
@@ -37,12 +37,12 @@ class TestMath(BaseSpArrayTest):
 
   def test_add_sparray(self):
     s = ss.rand(*sparse2d.shape, density=0.5)
-    b = SpArray.from_spmatrix(s)
+    b = FlatSparray.from_spmatrix(s)
     assert_array_equal(dense2d + s, (self.sp2d + b).toarray())
     assert_array_equal(s + dense2d, (b + self.sp2d).toarray())
     # Test broadcasting
     s = ss.rand(sparse2d.shape[0], 1, density=0.5)
-    b = SpArray.from_spmatrix(s)
+    b = FlatSparray.from_spmatrix(s)
     assert_sparse_equal(dense2d + s, self.sp2d + b)
     assert_sparse_equal(s + dense2d, b + self.sp2d)
 
@@ -85,12 +85,12 @@ class TestMath(BaseSpArrayTest):
 
   def test_mul_sparray(self):
     s = ss.rand(*sparse2d.shape, density=0.5)
-    b = SpArray.from_spmatrix(s)
+    b = FlatSparray.from_spmatrix(s)
     assert_sparse_equal(s.multiply(dense2d), b * self.sp2d)
     # Test broadcasting
     for shape in [(sparse2d.shape[0], 1), (1, sparse2d.shape[1])]:
       s = ss.rand(*shape, density=0.5)
-      b = SpArray.from_spmatrix(s)
+      b = FlatSparray.from_spmatrix(s)
       assert_sparse_equal(s.multiply(dense2d), b * self.sp2d)
 
   def test_imul(self):
@@ -131,7 +131,7 @@ class TestMath(BaseSpArrayTest):
 
   def test_div_sparray(self):
     s = ss.rand(*sparse2d.shape, density=0.5)
-    b = SpArray.from_spmatrix(s)
+    b = FlatSparray.from_spmatrix(s)
     # spmatrix / spmatrix is broken in scipy, so we compare against ndarrays
     c = s.toarray()
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -192,7 +192,7 @@ class TestMath(BaseSpArrayTest):
     for fmt in ('csr', 'csc'):
       b = ss.rand(dense2d.shape[1], dense2d.shape[0], density=0.5, format=fmt)
       assert_sparse_equal(sparse2d.dot(b), self.sp2d.dot(b))
-      # XXX: spmatrix.dot(SpArray) calls np.asarray on us,
+      # XXX: spmatrix.dot(FlatSparray) calls np.asarray on us,
       #  which just wraps us in an object array.
       # assert_sparse_equal(b.dot(sparse2d), b.dot(self.sp2d))
 
@@ -203,12 +203,12 @@ class TestMath(BaseSpArrayTest):
       d = np.random.random(shape)
       d.flat[np.random.randint(2, size=d.size)] = 0
       e = dense2d.dot(d)
-      b = SpArray.from_ndarray(d)
+      b = FlatSparray.from_ndarray(d)
       assert_array_almost_equal(e, self.sp2d.dot(b).toarray())
 
     d = np.random.random(dense1d.shape[0])
     d.flat[np.random.randint(2, size=d.size)] = 0
-    b = SpArray.from_ndarray(d)
+    b = FlatSparray.from_ndarray(d)
     self.assertEqual(dense1d.dot(d), self.sp1d.dot(b))
     self.assertEqual(d.dot(dense1d), b.dot(self.sp1d))
 
@@ -223,7 +223,7 @@ class TestMath(BaseSpArrayTest):
 
   def test_minmax_imum_sparray(self):
     s = ss.rand(*sparse2d.shape, density=0.5)
-    b = SpArray.from_spmatrix(s)
+    b = FlatSparray.from_spmatrix(s)
     assert_sparse_equal(s.minimum(dense2d), b.minimum(self.sp2d))
     assert_sparse_equal(s.maximum(dense2d), b.maximum(self.sp2d))
 
@@ -316,7 +316,7 @@ class TestMath(BaseSpArrayTest):
     assert_array_equal(b < dense2d, b < self.sp2d)
     # Test sparray
     s = ss.rand(*sparse2d.shape, density=0.5)
-    b = SpArray.from_spmatrix(s)
+    b = FlatSparray.from_spmatrix(s)
     assert_sparse_equal(sparse2d < s, self.sp2d < b)
     assert_sparse_equal(s < sparse2d, b < self.sp2d)
     # Test spmatrix

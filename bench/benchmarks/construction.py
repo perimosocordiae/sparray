@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.sparse as ss
 
-from sparray import SpArray
+from sparray import FlatSparray
 
 
 class Construction2D(object):
@@ -14,16 +14,16 @@ class Construction2D(object):
     self.spm_csr = self.spm.tocsr()
 
   def time_init(self):
-    SpArray(self.indices, self.data, shape=self.arr.shape)
+    FlatSparray(self.indices, self.data, shape=self.arr.shape)
 
   def time_from_ndarray(self):
-    SpArray.from_ndarray(self.arr)
+    FlatSparray.from_ndarray(self.arr)
 
   def time_from_spmatrix_coo(self):
-    SpArray.from_spmatrix(self.spm)
+    FlatSparray.from_spmatrix(self.spm)
 
   def time_from_spmatrix_csr(self):
-    SpArray.from_spmatrix(self.spm_csr)
+    FlatSparray.from_spmatrix(self.spm_csr)
 
 
 class ConstructionND(object):
@@ -41,10 +41,10 @@ class ConstructionND(object):
     self.arr = arr.reshape(shape)
 
   def time_init(self, shape):
-    SpArray(self.indices, self.data, shape=shape)
+    FlatSparray(self.indices, self.data, shape=shape)
 
   def time_canonical_init(self, shape):
-    SpArray(self.sorted_indices, self.data, shape=shape, is_canonical=True)
+    FlatSparray(self.sorted_indices, self.data, shape=shape, is_canonical=True)
 
   def time_from_ndarray(self, shape):
-    SpArray.from_ndarray(self.arr)
+    FlatSparray.from_ndarray(self.arr)
