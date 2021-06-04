@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import unittest
 import numpy as np
 import scipy.sparse as ss
@@ -13,13 +12,14 @@ from .test_base import (
 
 
 # Check for __numpy_ufunc__
-class _UFuncCheck(object):
-    def __array__(self):
-        return np.array([1])
+class _UFuncCheck:
+  def __array__(self):
+    return np.array([1])
 
-    def __numpy_ufunc__(self, *a, **kwargs):
-        global HAS_NUMPY_UFUNC
-        HAS_NUMPY_UFUNC = True
+  def __numpy_ufunc__(self, *a, **kwargs):
+    global HAS_NUMPY_UFUNC
+    HAS_NUMPY_UFUNC = True
+
 
 HAS_NUMPY_UFUNC = False
 np.add(_UFuncCheck(), np.array([1]))

@@ -1,10 +1,9 @@
-from __future__ import absolute_import
 import numpy as np
 
 __all__ = ['is_sparray']
 
 
-class _BaseSparray(object):
+class _BaseSparray:
   '''Base-class for Sparray types.'''
   __array_priority__ = 999
 
@@ -17,8 +16,6 @@ class _BaseSparray(object):
       return bool(self.nnz)
     raise ValueError("The truth value of an array with more than one "
                      "element is ambiguous. Use a.any() or a.all().")
-
-  __nonzero__ = __bool__
 
   def __iter__(self):
     for i in range(self.shape[0]):

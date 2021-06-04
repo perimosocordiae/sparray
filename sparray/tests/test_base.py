@@ -41,6 +41,7 @@ def assert_sparse_almost_equal(a, b, err_msg=''):
 
 class BaseSparrayTest(unittest.TestCase):
   '''Base class that other tests can inherit from'''
+
   def setUp(self):
     self.sp1d = FlatSparray(dense1d_indices, dense1d_data, shape=dense1d.shape)
     self.sp2d = FlatSparray(dense2d_indices, dense2d_data, shape=dense2d.shape)

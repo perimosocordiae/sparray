@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import numpy as np
 import unittest
 from numpy.testing import assert_array_equal
@@ -10,10 +9,10 @@ from .test_base import (
 class TestIndexing(BaseSparrayTest):
 
   def test_simple_indexing(self):
-    for i in [0, 1, len(dense1d)-1, -1]:
+    for i in [0, 1, len(dense1d) - 1, -1]:
       self.assertEqual(dense1d[i], self.sp1d[i])
-    for i in [0, 1, len(dense2d)-1, -1]:
-      for j in [0, 1, dense2d.shape[1]-1, -1]:
+    for i in [0, 1, len(dense2d) - 1, -1]:
+      for j in [0, 1, dense2d.shape[1] - 1, -1]:
         self.assertEqual(dense2d[i,j], self.sp2d[i,j])
     # check out of bounds indexes
     self.assertRaises(IndexError, lambda: self.sp1d[len(dense1d)])
@@ -27,9 +26,9 @@ class TestIndexing(BaseSparrayTest):
     self.assertRaises(IndexError, lambda: self.sp1d[...,...,...])
 
   def test_partial_indexing(self):
-    for i in [0, 1, len(dense2d)-1, -1]:
+    for i in [0, 1, len(dense2d) - 1, -1]:
       assert_array_equal(dense2d[i], self.sp2d[i].toarray())
-    for j in [0, 1, dense2d.shape[1]-1, -1]:
+    for j in [0, 1, dense2d.shape[1] - 1, -1]:
       assert_array_equal(dense2d[:,j], self.sp2d[:,j].toarray())
 
   def test_iter(self):
@@ -144,6 +143,7 @@ class TestAssignment(BaseSparrayTest):
       a.setdiag(99, offset=k)
       a_sparse.setdiag(99, k=k)
       assert_sparse_equal(a_sparse, a, err_msg='Mismatch for k=%d' % k)
+
 
 if __name__ == '__main__':
   unittest.main()

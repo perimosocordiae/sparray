@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import unittest
 import numpy as np
 import scipy.sparse as ss
@@ -325,6 +324,7 @@ class TestMath(BaseSparrayTest):
       assert_sparse_equal(sparse2d < b, self.sp2d < b)
       # spmatrix doesn't know how to handle us
       # assert_sparse_equal(b < sparse2d, b < self.sp2d)
+
 
 if __name__ == '__main__':
   unittest.main()

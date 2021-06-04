@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-from __future__ import print_function
+#!/usr/bin/env python3
 import timeit
 import numpy as np
 import scipy.sparse as ss
@@ -52,6 +51,7 @@ def main():
     ratio = ['N/A' if np.isinf(r) else ('%.2fx' % r) for r in ratio]
     print(label.ljust(label_size), *[r.ljust(fmt_size) for r in ratio], end=' ')
     print(format_time(result[-1]).ljust(fmt_size))
+
 
 if __name__ == '__main__':
   main()

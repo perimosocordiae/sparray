@@ -18,7 +18,7 @@ setup_kwargs = dict(
     url='http://github.com/perimosocordiae/sparray',
     license='MIT',
     packages=['sparray'],
-    package_data = {'': ['*.pyx']},
+    package_data={'': ['*.pyx']},
     install_requires=[
         'numpy >= 1.9',
         'scipy >= 0.15',
@@ -27,6 +27,6 @@ setup_kwargs = dict(
 )
 if use_cython:
   exts = [Extension('*', ['sparray/*.pyx'], include_dirs=[np.get_include()])]
-  setup_kwargs['ext_modules'] = cythonize(exts)
+  setup_kwargs['ext_modules'] = cythonize(exts, language_level='3')
 
 setup(**setup_kwargs)

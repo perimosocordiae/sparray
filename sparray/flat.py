@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import numbers
 import numpy as np
 import scipy.sparse as ss
@@ -24,6 +23,7 @@ class FlatSparray(_BaseSparray):
     self.indices : sorted int64 array of nonzero flat indices
     self.shape : tuple of integers, ala ndarray shape
   '''
+
   def __init__(self, indices, data, shape=None, is_canonical=False):
     indices = np.array(indices, dtype=int, copy=False).ravel()
     data = np.array(data, copy=False).ravel()
@@ -34,7 +34,7 @@ class FlatSparray(_BaseSparray):
       indices, inv_ind = np.unique(indices, return_inverse=True)
       data = np.bincount(inv_ind, weights=data).astype(data.dtype, copy=False)
     if shape is None:
-      self.shape = (indices[-1]+1,)
+      self.shape = (indices[-1] + 1,)
     else:
       self.shape = shape
       assert np.prod(shape) >= len(data)
@@ -99,7 +99,7 @@ class FlatSparray(_BaseSparray):
       return self
     # axes control dimension order, defaults to reverse
     if not axes:
-      axes = range(self.ndim-1, -1, -1)
+      axes = range(self.ndim - 1, -1, -1)
     elif len(axes) == 1 and self.ndim > 1:
       axes = axes[0]
     new_shape = tuple(self.shape[i] for i in axes)
@@ -223,7 +223,7 @@ class FlatSparray(_BaseSparray):
     if ell_inds:
       # insert as many colons as we need at the Ellipsis position
       ell_pos, = ell_inds
-      mut_indices[ell_pos:ell_pos+1] = [slice(None)] * (missing_dims+1)
+      mut_indices[ell_pos:ell_pos + 1] = [slice(None)] * (missing_dims + 1)
     elif missing_dims > 0:
       mut_indices.extend([slice(None)] * missing_dims)
 
@@ -341,11 +341,11 @@ class FlatSparray(_BaseSparray):
         new_size = self.data.shape[0] + 1
         new_data = np.empty(new_size, dtype=self.data.dtype)
         new_data[:i] = self.data[:i]
-        new_data[i+1:] = self.data[i:]
+        new_data[i + 1:] = self.data[i:]
         new_indices = np.empty(new_size, dtype=self.indices.dtype)
         new_indices[:i] = self.indices[:i]
         new_indices[i] = flat_idx
-        new_indices[i+1:] = self.indices[i:]
+        new_indices[i + 1:] = self.indices[i:]
         self.data = new_data
         self.indices = new_indices
       # we're now definitely in the sparsity structure, so assign away
@@ -543,12 +543,13 @@ class FlatSparray(_BaseSparray):
                                                          other.shape))
     # if other is sparse, use spmatrix dot
     if ss.issparse(other) or isinstance(other, FlatSparray):
-      out_shape = self.shape[:-1] + other.shape[:ax2] + other.shape[ax2+1:]
+      out_shape = self.shape[:-1] + other.shape[:ax2] + other.shape[ax2 + 1:]
       lhs_shape = (int(np.product(self.shape[:-1])), self.shape[ax1])
       lhs = self.reshape(lhs_shape).tocoo()
       if isinstance(other, FlatSparray):
         # transpose so ax2 comes first
-        axes = (ax2,) + tuple(range(ax2)) + tuple(range(ax2+1,len(other.shape)))
+        axes = ((ax2,) + tuple(range(ax2))
+                + tuple(range(ax2 + 1, len(other.shape))))
         other = other.transpose(*axes)
         # reshape to 2d for spmatrix
         rhs_shape = (other.shape[0], int(np.product(other.shape[1:])))
@@ -610,11 +611,11 @@ class FlatSparray(_BaseSparray):
       return self.data.sum(dtype=dtype)
     # XXX: we don't support tuples of axes, yet
     axis = int(axis)
-    new_shape = self.shape[:axis] + self.shape[axis+1:]
+    new_shape = self.shape[:axis] + self.shape[axis + 1:]
     if not new_shape:
       return self.data.sum(dtype=dtype)
     axis_inds = np.unravel_index(self.indices, self.shape)
-    axis_inds = axis_inds[:axis] + axis_inds[axis+1:]
+    axis_inds = axis_inds[:axis] + axis_inds[axis + 1:]
     flat_inds = np.ravel_multi_index(axis_inds, new_shape)
     new_idx, data_idx = np.unique(flat_inds, return_inverse=True)
     # Note: we can't use:
