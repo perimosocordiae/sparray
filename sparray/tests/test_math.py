@@ -42,8 +42,9 @@ class TestMath(BaseSparrayTest):
     # Test broadcasting
     s = ss.rand(sparse2d.shape[0], 1, density=0.5)
     b = FlatSparray.from_spmatrix(s)
-    assert_sparse_equal(dense2d + s, self.sp2d + b)
-    assert_sparse_equal(s + dense2d, b + self.sp2d)
+    # XXX using .A to avoid a scipy.sparse bug
+    assert_sparse_equal(dense2d + s.A, self.sp2d + b)
+    assert_sparse_equal(s.A + dense2d, b + self.sp2d)
 
   def test_add_scalar(self):
     b = 0
